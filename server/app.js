@@ -1,3 +1,6 @@
+import dns from 'dns'; // Set DNS servers to Google's public DNS servers
+dns.setServers(['8.8.8.8', '8.8.4.4']); 
+
 // server/app.js
 import 'dotenv/config';
 import express from 'express';

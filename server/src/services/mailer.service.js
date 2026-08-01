@@ -13,13 +13,13 @@ async function sendEmail({ to, subject, html }) {
     });
 
     if (error) {
-      console.error('[mailer] Resend error:', error);
-      throw new Error('Failed to send email');
-    }
+  console.error('[mailer] Full Resend error:', error);
+  throw error;
+}
 
     return data;
   } catch (err) {
-    console.error('[mailer] Unexpected error sending email:', err.message);
+    console.error('[mailer] Unexpected error sending email:', err);
     throw err;
   }
 }

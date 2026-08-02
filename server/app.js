@@ -11,10 +11,12 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { Server as SocketIOServer } from 'socket.io';
 import historyRoutes from './src/routes/history.routes.js';
-
 import { connectDB } from './src/config/db.js';
 import { registerLocationHandlers } from './src/sockets/location.socket.js';
 import authRoutes from './src/routes/auth.routes.js';
+import notificationRoutes from './src/routes/notification.routes.js';
+import profileRoutes from './src/routes/profile.routes.js';
+
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +44,10 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 // --- History routes ---
 app.use('/api/history', historyRoutes);
+// --- Notification routes ---
+app.use('/api/notifications', notificationRoutes);
+// --- Profile routes ---
+app.use('/api/profile', profileRoutes); 
 
 // --- Socket handlers (existing V1 logic, unchanged) ---
 registerLocationHandlers(io);

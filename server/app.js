@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { Server as SocketIOServer } from 'socket.io';
+import historyRoutes from './src/routes/history.routes.js';
 
 import { connectDB } from './src/config/db.js';
 import { registerLocationHandlers } from './src/sockets/location.socket.js';
@@ -39,6 +40,8 @@ app.get('/api/health', (req, res) => {
 
 // --- Auth routes ---
 app.use('/api/auth', authRoutes);
+// --- History routes ---
+app.use('/api/history', historyRoutes);
 
 // --- Socket handlers (existing V1 logic, unchanged) ---
 registerLocationHandlers(io);

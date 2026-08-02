@@ -29,6 +29,12 @@ export default function DashboardPage() {
         >
           Open Live Tracking →
         </Link>
+        <Link
+          to="/history"
+          className="inline-block mt-4 ml-2 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+          View Device History →
+        </Link>
         </p>
       </div>
     </div>

@@ -6,6 +6,7 @@ import ProtectedRoute from './app/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import LiveTrackingPage from './pages/LiveTrackingPage';
+import DeviceHistoryPage from './pages/DeviceHistoryPage';
 
 export default function App() {
   return (
@@ -28,6 +29,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <LiveTrackingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <DeviceHistoryPage />
                 </ProtectedRoute>
               }
             />

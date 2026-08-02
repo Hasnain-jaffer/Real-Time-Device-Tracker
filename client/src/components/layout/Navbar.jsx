@@ -72,6 +72,9 @@ export default function Navbar() {
         >
           {user?.name?.[0]?.toUpperCase() || 'U'}
         </Link>
+        <Link to="/settings" className="text-sm hover:text-primary transition">
+          ⚙️
+        </Link>
 
         <button
           onClick={handleLogout}

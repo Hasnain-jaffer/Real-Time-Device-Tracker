@@ -1,11 +1,30 @@
-function App() {
+// client/src/App.jsx
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './app/AuthContext';
+import { SocketProvider } from './app/SocketProvider';
+import ProtectedRoute from './app/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+
+export default function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
-      <h1 className="text-5xl font-bold text-blue-500">
-        Tailwind is Working 🚀
-      </h1>
-    </div>
+    <AuthProvider>
+      <SocketProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<LoginPage />} />
+          </Routes>
+        </BrowserRouter>
+      </SocketProvider>
+    </AuthProvider>
   );
 }
-
-export default App;

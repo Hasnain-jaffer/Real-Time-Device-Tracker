@@ -1,7 +1,7 @@
 // client/src/pages/LoginPage.jsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../app/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -72,6 +72,14 @@ export default function LoginPage() {
             {isSubmitting ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+        <div className="flex items-center justify-between mt-4 text-sm">
+          <Link to="/forgot-password" className="text-primary hover:underline">
+            Forgot password?
+          </Link>
+          <Link to="/register" className="text-primary hover:underline">
+            Create account
+          </Link>
+        </div>
       </div>
     </div>
   );

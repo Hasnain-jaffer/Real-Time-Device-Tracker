@@ -18,6 +18,11 @@ import AboutPage from './pages/static/AboutPage';
 import PrivacyPolicyPage from './pages/static/PrivacyPolicyPage';
 import TermsPage from './pages/static/TermsPage';
 import NotFoundPage from './pages/static/NotFoundPage';
+import LandingPage from './pages/LandingPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 function Protected({ children }) {
   return (
@@ -34,6 +39,11 @@ export default function App() {
         <SocketProvider>
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
               <Route path="/tracking" element={<Protected><LiveTrackingPage /></Protected>} />

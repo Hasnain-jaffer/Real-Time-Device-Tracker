@@ -1,6 +1,7 @@
 // client/src/pages/DashboardPage.jsx
 import { useAuth } from '../app/AuthContext';
 import { useSocket } from '../app/SocketProvider';
+import { Link } from 'react-router-dom';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -22,6 +23,12 @@ export default function DashboardPage() {
         <p>Welcome, {user?.name || 'device tracker user'} 👋</p>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Socket status: {isConnected ? 'Connected 🟢' : 'Disconnected 🔴'}
+          <Link
+          to="/tracking"
+          className="inline-block mt-4 rounded-xl bg-primary text-white px-4 py-2 text-sm font-medium shadow-soft hover:bg-primary-600 transition"
+        >
+          Open Live Tracking →
+        </Link>
         </p>
       </div>
     </div>

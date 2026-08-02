@@ -5,6 +5,7 @@ import { SocketProvider } from './app/SocketProvider';
 import ProtectedRoute from './app/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import LiveTrackingPage from './pages/LiveTrackingPage';
 
 export default function App() {
   return (
@@ -22,6 +23,14 @@ export default function App() {
               }
             />
             <Route path="*" element={<LoginPage />} />
+            <Route
+              path="/tracking"
+              element={
+                <ProtectedRoute>
+                  <LiveTrackingPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </SocketProvider>

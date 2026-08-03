@@ -4,6 +4,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useSocket } from '../../app/SocketProvider';
+import { TILE_LAYERS, getStoredMapStyle } from './tileLayers';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 
 // Default Leaflet marker icons don't load correctly with bundlers unless fixed like this
 delete L.Icon.Default.prototype._getIconUrl;
@@ -29,6 +31,7 @@ export default function LiveMap() {
   const { socket } = useSocket();
   const [devices, setDevices] = useState({}); // { [socketId]: { latitude, longitude, updatedAt } }
   const [autoFollow, setAutoFollow] = useState(true);
+  const [mapStyle, setMapStyle] = useState(getStoredMapStyle());
   const devicesRef = useRef(devices);
   devicesRef.current = devices;
 
@@ -85,28 +88,31 @@ export default function LiveMap() {
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
+          key={mapStyle}
+          url={TILE_LAYERS[mapStyle].url}
+          attribution={TILE_LAYERS[mapStyle].attribution}
         />
         <AutoFollow devices={devices} autoFollow={autoFollow} />
 
-        {deviceIds.map((id) => {
-          const device = devices[id];
-          return (
-            <Marker key={id} position={[device.latitude, device.longitude]}>
-              <Popup>
-                <div className="text-sm">
-                  <p className="font-medium">Device {id.slice(0, 6)}</p>
-                  <p>Lat: {device.latitude.toFixed(5)}</p>
-                  <p>Lng: {device.longitude.toFixed(5)}</p>
-                  <p className="text-gray-500">
-                    Updated: {device.updatedAt.toLocaleTimeString()}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        <MarkerClusterGroup chunkedLoading>
+          {deviceIds.map((id) => {
+            const device = devices[id];
+            return (
+              <Marker key={id} position={[device.latitude, device.longitude]}>
+                <Popup>
+                  <div className="text-sm">
+                    <p className="font-medium">Device {id.slice(0, 6)}</p>
+                    <p>Lat: {device.latitude.toFixed(5)}</p>
+                    <p>Lng: {device.longitude.toFixed(5)}</p>
+                    <p className="text-gray-500">
+                      Updated: {device.updatedAt.toLocaleTimeString()}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
       </MapContainer>
 
       <div className="absolute top-3 right-3 z-[1000] glass rounded-xl shadow-soft px-3 py-2 flex items-center gap-2">
@@ -118,6 +124,24 @@ export default function LiveMap() {
           />
           Auto-follow
         </label>
+      </div>
+      <div className="absolute top-3 left-3 z-[1000] glass rounded-xl shadow-soft p-1 flex gap-1">
+        {Object.keys(TILE_LAYERS).map((style) => (
+          <button
+            key={style}
+            onClick={() => {
+              setMapStyle(style);
+              localStorage.setItem('mapStyle', style);
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition ${
+              mapStyle === style
+                ? 'bg-primary text-white'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            {style}
+          </button>
+        ))}
       </div>
 
       <div className="absolute bottom-3 left-3 z-[1000] glass rounded-xl shadow-soft px-3 py-1.5 text-xs">

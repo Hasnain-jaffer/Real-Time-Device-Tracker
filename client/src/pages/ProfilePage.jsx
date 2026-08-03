@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import { useAuth } from '../app/AuthContext';
+import { clearAccessToken } from '../lib/tokenStore';
 
 export default function ProfilePage() {
   const { logout } = useAuth();
@@ -56,8 +57,8 @@ export default function ProfilePage() {
 
   async function handleDeleteAccount() {
     await apiClient.delete('/profile');
-    localStorage.removeItem('accessToken');
-    navigate('/login');
+    clearAccessToken();
+    navigate('/');
   }
 
   if (!profile) return <div className="p-6 text-gray-500">Loading…</div>;

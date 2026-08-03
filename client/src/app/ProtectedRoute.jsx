@@ -3,12 +3,17 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { isLoading } = useAuth();
-  const token = localStorage.getItem('accessToken');
+  const { user, isLoading } = useAuth();
 
-  if (isLoading) return null; // could render a spinner here later
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">
+        Loading…
+      </div>
+    );
+  }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

@@ -1,21 +1,20 @@
 // client/src/lib/apiClient.js
 import axios from 'axios';
+import { getAccessToken, setAccessToken, clearAccessToken } from './tokenStore';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true, // sends the httpOnly refreshToken cookie
 });
 
-// Attach access token to every request if we have one
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// On 401, try refreshing the access token once, then retry the original request
 let isRefreshing = false;
 let pendingQueue = [];
 
@@ -32,7 +31,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           pendingQueue.push({ resolve, reject });
@@ -51,13 +55,13 @@ apiClient.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        localStorage.setItem('accessToken', data.accessToken);
+        setAccessToken(data.accessToken);
         processQueue(null, data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem('accessToken');
+        clearAccessToken();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

@@ -1,14 +1,14 @@
 // client/src/lib/socketClient.js
 import { io } from 'socket.io-client';
+import { getAccessToken } from './tokenStore';
 
 let socket = null;
 
 export function getSocket() {
   if (!socket) {
-    const token = localStorage.getItem('accessToken');
     socket = io(import.meta.env.VITE_SOCKET_URL, {
       autoConnect: false,
-      auth: { token },
+      auth: { token: getAccessToken() },
     });
   }
   return socket;
@@ -16,8 +16,7 @@ export function getSocket() {
 
 export function connectSocket() {
   const s = getSocket();
-  // refresh token in case it changed since socket was created
-  s.auth = { token: localStorage.getItem('accessToken') };
+  s.auth = { token: getAccessToken() };
   if (!s.connected) s.connect();
   return s;
 }

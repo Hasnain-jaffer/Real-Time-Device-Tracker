@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import apiClient from '../lib/apiClient';
+import { SkeletonCard, Skeleton } from '../components/ui/Skeleton';
 
 function haversineDistance([lat1, lon1], [lat2, lon2]) {
   const R = 6371; // km
@@ -71,27 +72,35 @@ export default function DeviceHistoryPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
-        <div className="glass rounded-2xl shadow-soft p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Points recorded</p>
-          <p className="text-xl font-semibold">{pings.length}</p>
-        </div>
-        <div className="glass rounded-2xl shadow-soft p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Distance travelled</p>
-          <p className="text-xl font-semibold">{totalDistanceKm.toFixed(2)} km</p>
-        </div>
-        <div className="glass rounded-2xl shadow-soft p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Duration</p>
-          <p className="text-xl font-semibold">{durationMinutes} min</p>
-        </div>
+        {isLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <div className="glass rounded-2xl shadow-soft p-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Points recorded</p>
+              <p className="text-xl font-semibold">{pings.length}</p>
+            </div>
+            <div className="glass rounded-2xl shadow-soft p-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Distance travelled</p>
+              <p className="text-xl font-semibold">{totalDistanceKm.toFixed(2)} km</p>
+            </div>
+            <div className="glass rounded-2xl shadow-soft p-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Duration</p>
+              <p className="text-xl font-semibold">{durationMinutes} min</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4 px-2 pb-2">
         <div className="md:col-span-2 rounded-2xl overflow-hidden shadow-soft">
           {isLoading ? (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              Loading path…
-            </div>
-          ) : path.length === 0 ? (
+            <Skeleton className="w-full h-full rounded-none" />
+          ) : path.length === 0 ?  (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               No location history for this device yet.
             </div>

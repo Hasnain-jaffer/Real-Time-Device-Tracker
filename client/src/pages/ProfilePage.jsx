@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import { useAuth } from '../app/AuthContext';
 import { clearAccessToken } from '../lib/tokenStore';
+import { useToast } from '../app/ToastContext';
 
 export default function ProfilePage() {
+  const { showToast } = useToast();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
@@ -31,9 +33,10 @@ export default function ProfilePage() {
     try {
       const { data } = await apiClient.patch('/profile', { name });
       setProfile(data.user);
-      setSaveMessage('Profile updated.');
+     setSaveMessage('Profile updated.');
+      showToast('Profile updated successfully', 'success');
     } catch (err) {
-      setSaveMessage(err.response?.data?.message || 'Failed to update profile.');
+      showToast(err.response?.data?.message || 'Failed to update profile.', 'error');
     }
   }
 
@@ -46,6 +49,7 @@ export default function ProfilePage() {
         newPassword,
       });
       setPasswordMessage('Password changed. Please log in again.');
+      showToast('Password changed. Please log in again.', 'success');
       setTimeout(async () => {
         await logout();
         navigate('/login');

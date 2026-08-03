@@ -25,7 +25,6 @@ export function AuthProvider({ children }) {
         const meRes = await apiClient.get('/auth/me');
         setUser(meRes.data.user);
       } catch {
-        // No valid refresh cookie — user is simply logged out, not an error.
         clearAccessToken();
         setUser(null);
       } finally {

@@ -23,6 +23,7 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import { ToastProvider } from './app/ToastContext';
 
 function Protected({ children }) {
   return (
@@ -35,6 +36,7 @@ function Protected({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
+      <ToastProvider>
       <AuthProvider>
         <SocketProvider>
           <BrowserRouter>
@@ -63,6 +65,7 @@ export default function App() {
           </BrowserRouter>
         </SocketProvider>
       </AuthProvider>
+     </ToastProvider>
     </ThemeProvider>
   );
 }

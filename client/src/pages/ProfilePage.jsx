@@ -136,7 +136,7 @@ export default function ProfilePage() {
             Delete Account
           </button>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleDeleteAccount}
               className="rounded-xl bg-danger text-white px-4 py-2 text-sm font-medium hover:bg-red-600 transition"

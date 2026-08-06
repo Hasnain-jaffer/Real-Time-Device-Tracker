@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
       <div className="glass rounded-2xl shadow-soft p-6 space-y-4">
         <h2 className="font-medium">Appearance</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {['light', 'dark', 'system'].map((option) => (
             <button
               key={option}
@@ -49,7 +49,7 @@ export default function SettingsPage() {
 
       <div className="glass rounded-2xl shadow-soft p-6 space-y-4">
         <h2 className="font-medium">Units</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {['metric', 'imperial'].map((option) => (
             <button
               key={option}

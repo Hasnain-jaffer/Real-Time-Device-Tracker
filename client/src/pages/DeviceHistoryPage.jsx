@@ -54,9 +54,13 @@ export default function DeviceHistoryPage() {
 
   return (
     <div className="h-screen flex flex-col p-4 gap-4">
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-2">
         <h1 className="text-2xl font-semibold">Device History</h1>
+        <label htmlFor="device-select" className="sr-only">
+          Select device
+        </label>
         <select
+          id="device-select"
           value={selectedDevice}
           onChange={(e) => setSelectedDevice(e.target.value)}
           className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"

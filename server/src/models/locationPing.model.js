@@ -15,6 +15,13 @@ const locationPingSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    // Optional for now — populated once socket auth (Phase 2) attaches a real device
+    deviceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Device',
+      default: null,
+      index: true,
+    },
     latitude: {
       type: Number,
       required: true,
@@ -29,5 +36,6 @@ const locationPingSchema = new mongoose.Schema(
 
 // Speeds up "history for this device between these dates" queries
 locationPingSchema.index({ socketId: 1, createdAt: -1 });
+locationPingSchema.index({ deviceId: 1, createdAt: -1 });
 
 export default mongoose.model('LocationPing', locationPingSchema);

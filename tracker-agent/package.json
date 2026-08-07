@@ -1,0 +1,14 @@
+{
+  "name": "trackersphere-agent",
+  "version": "1.0.0",
+  "description": "Standalone tracking agent for TrackSphere - streams device location to the tracking server",
+  "main": "agent.js",
+  "type": "module",
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.3",
+    "dotenv": "^16.4.5"
+  }
+}

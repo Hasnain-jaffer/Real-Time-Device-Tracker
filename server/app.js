@@ -16,7 +16,7 @@ import { registerLocationHandlers } from './src/sockets/location.socket.js';
 import authRoutes from './src/routes/auth.routes.js';
 import notificationRoutes from './src/routes/notification.routes.js';
 import profileRoutes from './src/routes/profile.routes.js';
-
+import deviceRoutes from './src/routes/device.routes.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -48,6 +48,8 @@ app.use('/api/history', historyRoutes);
 app.use('/api/notifications', notificationRoutes);
 // --- Profile routes ---
 app.use('/api/profile', profileRoutes); 
+// --- Device routes ---
+app.use('/api/devices', deviceRoutes);
 
 // --- Socket handlers (existing V1 logic, unchanged) ---
 registerLocationHandlers(io);

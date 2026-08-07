@@ -6,6 +6,7 @@ import { useAuth } from '../../app/AuthContext';
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/devices', label: 'Devices' },
   { to: '/tracking', label: 'Live Tracking' },
   { to: '/history', label: 'History' },
 ];

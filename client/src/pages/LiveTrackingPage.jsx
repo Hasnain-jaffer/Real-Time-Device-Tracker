@@ -1,12 +1,33 @@
 // client/src/pages/LiveTrackingPage.jsx
+import { useState } from 'react';
 import LiveMap from '../components/map/LiveMap';
+import TrackingPanel from '../features/tracking/components/TrackingPanel';
+import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
 
 export default function LiveTrackingPage() {
+  const { trackedDevices, hiddenIds, toggleVisibility } = useTrackedDevices();
+  const [selectedKey, setSelectedKey] = useState(null);
+
   return (
     <div className="h-screen flex flex-col p-4 gap-4">
       <h1 className="text-2xl font-semibold px-2">Live Tracking</h1>
-      <div className="flex-1 min-h-0">
-        <LiveMap />
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="lg:col-span-3 min-h-[300px]">
+          <LiveMap
+            devices={trackedDevices}
+            selectedKey={selectedKey}
+            onSelectDevice={setSelectedKey}
+          />
+        </div>
+        <div className="lg:col-span-1 min-h-[300px]">
+          <TrackingPanel
+            devices={trackedDevices}
+            hiddenIds={hiddenIds}
+            onToggleVisibility={toggleVisibility}
+            onSelectDevice={setSelectedKey}
+            selectedKey={selectedKey}
+          />
+        </div>
       </div>
     </div>
   );

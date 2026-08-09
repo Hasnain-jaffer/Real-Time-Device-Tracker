@@ -7,6 +7,8 @@
 
 import Device from '../models/device.model.js';
 import LocationPing from '../models/locationPing.model.js';
+import { evaluateGeofences } from '../services/geofenceEvaluator.service.js';
+
 
 export function registerLocationHandlers(io) {
   io.on('connection', async (socket) => {
@@ -60,6 +62,16 @@ export function registerLocationHandlers(io) {
           lastLocation: { latitude, longitude },
         }).catch((err) => {
           console.error('[location.socket] Failed to update device status:', err.message);
+        });
+      }
+      // Evaluate geofence enter/exit for this device (fire-and-forget, non-blocking)
+      if (socket.deviceId && device) {
+        evaluateGeofences({
+          deviceId: socket.deviceId,
+          ownerId: device.ownerId,
+          deviceName: device.name,
+          latitude,
+          longitude,
         });
       }
     });

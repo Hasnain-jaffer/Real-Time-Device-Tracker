@@ -49,6 +49,10 @@ const deviceSchema = new mongoose.Schema(
       latitude: { type: Number, default: null },
       longitude: { type: Number, default: null },
     },
+    insideGeofenceIds: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Geofence' }],
+      default: [],
+    },
   },
   { timestamps: true }
 );

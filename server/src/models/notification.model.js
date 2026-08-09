@@ -17,6 +17,8 @@ const notificationSchema = new mongoose.Schema(
         'security-alert',
         'system-message',
         'location-update',
+        'geofence-enter',
+        'geofence-exit',
       ],
       required: true,
     },

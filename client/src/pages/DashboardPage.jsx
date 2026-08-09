@@ -8,7 +8,7 @@ export default function DashboardPage() {
   const { isConnected } = useSocket();
 
   return (
-    <div className="min-h-screen p-4 sm:p-8">
+    <div className="p-4 sm:p-8">
       <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
 
       <div className="glass rounded-2xl shadow-soft p-6">

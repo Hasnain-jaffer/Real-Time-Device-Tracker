@@ -1,6 +1,7 @@
 // client/src/features/devices/components/DeviceCard.jsx
 import { useState } from 'react';
 import { useToast } from '../../../app/ToastContext';
+import { Link } from 'react-router-dom';
 
 const STATUS_STYLES = {
   online: { dot: 'bg-success', label: 'Online', badge: 'bg-success/10 text-success' },
@@ -24,7 +25,9 @@ export default function DeviceCard({ device, onRename, onDelete, onToggleTrackin
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold truncate">{device.name}</p>
+          <Link to={`/devices/${device._id}`} className="font-semibold truncate hover:text-primary transition block">
+            {device.name}
+          </Link>
           {device.identifier && (
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{device.identifier}</p>
           )}

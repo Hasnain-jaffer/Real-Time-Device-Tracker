@@ -48,3 +48,26 @@ export async function listDevices(req, res, next) {
     next(err);
   }
 }
+export async function getDeviceHistoryByDeviceId(req, res, next) {
+  try {
+    const { deviceId } = req.params;
+    const { from, to, limit = 500 } = req.query;
+
+    const query = { deviceId };
+
+    if (from || to) {
+      query.createdAt = {};
+      if (from) query.createdAt.$gte = new Date(from);
+      if (to) query.createdAt.$lte = new Date(to);
+    }
+
+    const pings = await LocationPing.find(query)
+      .sort({ createdAt: 1 })
+      .limit(Math.min(Number(limit) || 500, 2000))
+      .lean();
+
+    res.json({ deviceId, count: pings.length, pings });
+  } catch (err) {
+    next(err);
+  }
+}

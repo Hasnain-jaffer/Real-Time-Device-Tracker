@@ -25,6 +25,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import { ToastProvider } from './app/ToastContext';
 import DeviceCenterPage from './pages/DeviceCenterPage';
+import DeviceDetailsPage from './pages/DeviceDetailsPage';
 
 function Protected({ children }) {
   return (
@@ -54,13 +55,14 @@ export default function App() {
               <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
               <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
               <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+              <Route path="/devices" element={<Protected><DeviceCenterPage /></Protected>} />
+              <Route path="/devices/:id" element={<Protected><DeviceDetailsPage /></Protected>} />
 
               <Route path="/help" element={<HelpCenterPage />} />
               <Route path="/contact" element={<ContactUsPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsPage />} />
-              <Route path="/devices" element={<Protected><DeviceCenterPage /></Protected>} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>

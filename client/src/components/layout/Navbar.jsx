@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { to: '/devices', label: 'Devices' },
   { to: '/tracking', label: 'Live Tracking' },
   { to: '/history', label: 'History' },
+  { to: '/stops', label: 'Stops' },
 ];
 
 export default function Navbar() {

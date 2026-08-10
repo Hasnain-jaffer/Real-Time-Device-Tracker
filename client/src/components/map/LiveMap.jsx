@@ -6,6 +6,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useSocket } from '../../app/SocketProvider';
 import { TILE_LAYERS, getStoredMapStyle } from './tileLayers';
+import GeofenceLayer from '../../features/geofences/components/GeofenceLayer';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -25,8 +26,7 @@ function AutoFollow({ devices, autoFollow, selectedKey }) {
   }, [devices, autoFollow, selectedKey, map]);
   return null;
 }
-
-export default function LiveMap({ devices, selectedKey, onSelectDevice }) {
+export default function LiveMap({ devices, selectedKey, onSelectDevice, geofences = [] }) {
   const { socket } = useSocket();
   const [autoFollow, setAutoFollow] = useState(true);
   const [mapStyle, setMapStyle] = useState(getStoredMapStyle());
@@ -92,6 +92,7 @@ export default function LiveMap({ devices, selectedKey, onSelectDevice }) {
             </Marker>
           ))}
         </MarkerClusterGroup>
+      <GeofenceLayer geofences={geofences} />
       </MapContainer>
 
       <div className="absolute top-3 left-3 z-[1000] glass rounded-xl shadow-soft p-1 flex gap-1">

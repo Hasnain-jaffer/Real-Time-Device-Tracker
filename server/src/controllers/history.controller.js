@@ -15,9 +15,10 @@ export async function getDeviceHistory(req, res, next) {
     }
 
     const pings = await LocationPing.find(query)
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .limit(Math.min(Number(limit) || 500, 2000))
       .lean();
+      pings.reverse();
 
     res.json({ socketId, count: pings.length, pings });
   } catch (err) {
@@ -62,9 +63,10 @@ export async function getDeviceHistoryByDeviceId(req, res, next) {
     }
 
     const pings = await LocationPing.find(query)
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .limit(Math.min(Number(limit) || 500, 2000))
       .lean();
+      pings.reverse();
 
     res.json({ deviceId, count: pings.length, pings });
   } catch (err) {

@@ -20,11 +20,6 @@ export async function evaluateGeofences({ deviceId, ownerId, deviceName, latitud
     const geofences = await Geofence.find({ ownerId, isActive: true });
     if (geofences.length === 0) return;
 
-    // Atomically claim the device's current state: read + immediately mark as
-    // "being evaluated" isn't needed here because Mongo serializes writes per
-    // document — instead we do a single findOneAndUpdate with the freshly
-    // computed set, which means the *last* write for a burst of near-simultaneous
-    // pings wins deterministically rather than racing on a shared in-memory Map.
     const device = await Device.findById(deviceId).select('insideGeofenceIds');
     if (!device) return;
 
@@ -35,7 +30,6 @@ export async function evaluateGeofences({ deviceId, ownerId, deviceName, latitud
       if (fence.deviceIds.length > 0 && !fence.deviceIds.some((id) => id.toString() === deviceId)) {
         continue;
       }
-
       const distance = haversineMeters(latitude, longitude, fence.latitude, fence.longitude);
       if (distance <= fence.radiusMeters) {
         currentlyInside.add(fence._id.toString());
@@ -45,12 +39,8 @@ export async function evaluateGeofences({ deviceId, ownerId, deviceName, latitud
     const entered = [...currentlyInside].filter((id) => !previouslyInside.has(id));
     const exited = [...previouslyInside].filter((id) => !currentlyInside.has(id));
 
-    // Nothing changed — skip the write entirely (also avoids bumping updatedAt needlessly)
     if (entered.length === 0 && exited.length === 0) return;
 
-    // Atomic write of the new state, conditioned on the state we just read —
-    // if another evaluation already changed it in between, this update simply
-    // overwrites with the latest computed truth rather than compounding errors.
     await Device.updateOne({ _id: deviceId }, { insideGeofenceIds: [...currentlyInside] });
 
     for (const fenceId of entered) {

@@ -1,5 +1,5 @@
 // client/src/App.jsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './app/AuthContext';
 import { SocketProvider } from './app/SocketProvider';
 import { ThemeProvider } from './app/ThemeContext';
@@ -26,6 +26,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import { ToastProvider } from './app/ToastContext';
 import DeviceCenterPage from './pages/DeviceCenterPage';
 import DeviceDetailsPage from './pages/DeviceDetailsPage';
+import GeofencesPage from './pages/GeofencesPage';
 
 function Protected({ children }) {
   return (
@@ -41,7 +42,6 @@ export default function App() {
       <ToastProvider>
       <AuthProvider>
         <SocketProvider>
-          <BrowserRouter>
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -57,6 +57,7 @@ export default function App() {
               <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
               <Route path="/devices" element={<Protected><DeviceCenterPage /></Protected>} />
               <Route path="/devices/:id" element={<Protected><DeviceDetailsPage /></Protected>} />
+              <Route path="/stops" element={<Protected><GeofencesPage /></Protected>} />
 
               <Route path="/help" element={<HelpCenterPage />} />
               <Route path="/contact" element={<ContactUsPage />} />
@@ -65,7 +66,6 @@ export default function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
-          </BrowserRouter>
         </SocketProvider>
       </AuthProvider>
      </ToastProvider>

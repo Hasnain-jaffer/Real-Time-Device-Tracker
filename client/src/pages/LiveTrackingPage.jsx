@@ -5,10 +5,12 @@ import TrackingPanel from '../features/tracking/components/TrackingPanel';
 import DistanceEtaCard from '../features/tracking/components/DistanceEtaCard';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
 import { useUserLocation } from '../features/tracking/hooks/useUserLocation';
+import { useGeofences } from '../features/geofences/hooks/useGeofences';
 
 export default function LiveTrackingPage() {
   const { trackedDevices, hiddenIds, toggleVisibility } = useTrackedDevices();
   const { position: userPosition } = useUserLocation();
+  const { geofences } = useGeofences();
   const [selectedKey, setSelectedKey] = useState(null);
 
   const selectedDevice = trackedDevices.find((d) => d.key === selectedKey) || null;
@@ -29,6 +31,7 @@ export default function LiveTrackingPage() {
             devices={trackedDevices}
             selectedKey={selectedKey}
             onSelectDevice={setSelectedKey}
+            geofences={geofences}
           />
         </div>
         <div className="lg:col-span-1 min-h-[300px]">

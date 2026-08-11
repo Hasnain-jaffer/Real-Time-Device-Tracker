@@ -1,20 +1,14 @@
 // server/src/sockets/location.socket.js
-// Preserves the original V1 real-time location broadcast logic untouched for
-// any connection that doesn't present a deviceKey (backward compatible).
-// New: connections that DO present a valid deviceKey are tied to a real
-// Device document — their pings are attributed to that device's identity
-// and lastSeenAt/status are kept in sync.
-
 import Device from '../models/device.model.js';
 import LocationPing from '../models/locationPing.model.js';
 import { evaluateGeofences } from '../services/geofenceEvaluator.service.js';
-
+import { verifyAccessToken } from '../utils/token.util.js';
 
 export function registerLocationHandlers(io) {
   io.on('connection', async (socket) => {
     console.log('Connected:', socket.id);
 
-    // --- Optional device authentication (additive, non-breaking) ---
+    // --- Optional device authentication (Batch 17, unchanged) ---
     let device = null;
     const deviceKey = socket.handshake.auth?.deviceKey;
 
@@ -35,12 +29,24 @@ export function registerLocationHandlers(io) {
       }
     }
 
-    // --- Existing V1 broadcast logic, unchanged ---
+    // --- New: optional user identification for browser tabs (for real-time notifications) ---
+    const userToken = socket.handshake.auth?.token;
+    if (userToken) {
+      try {
+        const decoded = verifyAccessToken(userToken);
+        socket.userId = decoded.sub;
+        socket.join(`user:${socket.userId}`);
+        console.log(`Browser session identified as user ${socket.userId}, joined private room`);
+      } catch (err) {
+        console.warn('[location.socket] Invalid user token on socket, staying anonymous:', err.message);
+      }
+    }
+
     socket.on('send-location', (data) => {
       console.log(data);
       io.emit('receive-location', {
         id: socket.id,
-        deviceId: socket.deviceId || null, // additive field only, old clients ignore it
+        deviceId: socket.deviceId || null,
         ...data,
       });
 
@@ -54,7 +60,6 @@ export function registerLocationHandlers(io) {
         console.error('[location.socket] Failed to persist ping:', err.message);
       });
 
-      // Keep device's lastSeenAt/lastLocation fresh on every ping, not just connect
       if (socket.deviceId) {
         Device.findByIdAndUpdate(socket.deviceId, {
           lastSeenAt: new Date(),
@@ -64,7 +69,7 @@ export function registerLocationHandlers(io) {
           console.error('[location.socket] Failed to update device status:', err.message);
         });
       }
-      // Evaluate geofence enter/exit for this device (fire-and-forget, non-blocking)
+
       if (socket.deviceId && device) {
         evaluateGeofences({
           deviceId: socket.deviceId,
@@ -72,6 +77,7 @@ export function registerLocationHandlers(io) {
           deviceName: device.name,
           latitude,
           longitude,
+          io,
         });
       }
     });

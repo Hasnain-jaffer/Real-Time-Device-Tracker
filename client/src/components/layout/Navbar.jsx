@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../../lib/apiClient';
 import { useAuth } from '../../app/AuthContext';
+import { useSocket } from '../../app/SocketProvider';
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -35,6 +36,16 @@ export default function Navbar() {
       clearInterval(interval);
     };
   }, []);
+  
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    function handleNewNotification() {
+      setUnreadCount((prev) => prev + 1);
+    }
+    socket.on('notification', handleNewNotification);
+    return () => socket.off('notification', handleNewNotification);
+  }, [socket]);
 
   async function handleLogout() {
     await logout();

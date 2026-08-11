@@ -1,6 +1,7 @@
 // client/src/pages/NotificationsPage.jsx
 import { useEffect, useState } from 'react';
 import apiClient from '../lib/apiClient';
+import { useSocket } from '../app/SocketProvider';
 
 const TYPE_ICONS = {
   'device-online': '🟢',
@@ -25,6 +26,16 @@ export default function NotificationsPage() {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    function handleNewNotification(notif) {
+      setNotifications((prev) => [notif, ...prev]);
+    }
+    socket.on('notification', handleNewNotification);
+    return () => socket.off('notification', handleNewNotification);
+  }, [socket]);
 
   async function handleMarkRead(id) {
     await apiClient.patch(`/notifications/${id}/read`);

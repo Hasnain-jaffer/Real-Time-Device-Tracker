@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import apiClient from '../lib/apiClient';
 import { SkeletonCard, Skeleton } from '../components/ui/Skeleton';
+import { useRoutePlayback } from '../features/history/hooks/useRoutePlayback';
+import PlaybackControls from '../features/history/components/PlaybackControls';
 
 function haversineDistance([lat1, lon1], [lat2, lon2]) {
-  const R = 6371; // km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -21,6 +23,8 @@ export default function DeviceHistoryPage() {
   const [selectedDevice, setSelectedDevice] = useState('');
   const [pings, setPings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const playback = useRoutePlayback(pings);
 
   useEffect(() => {
     apiClient.get('/history/devices').then(({ data }) => {
@@ -51,6 +55,10 @@ export default function DeviceHistoryPage() {
           (new Date(pings[pings.length - 1].createdAt) - new Date(pings[0].createdAt)) / 60000
         )
       : 0;
+
+  const playbackPosition = playback.currentPing
+    ? [playback.currentPing.latitude, playback.currentPing.longitude]
+    : null;
 
   return (
     <div className="h-screen flex flex-col p-4 gap-4">
@@ -100,11 +108,15 @@ export default function DeviceHistoryPage() {
         )}
       </div>
 
+      <div className="px-2">
+        {!isLoading && <PlaybackControls playback={playback} totalPoints={pings.length} />}
+      </div>
+
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4 px-2 pb-2">
         <div className="md:col-span-2 rounded-2xl overflow-hidden shadow-soft">
           {isLoading ? (
             <Skeleton className="w-full h-full rounded-none" />
-          ) : path.length === 0 ?  (
+          ) : path.length === 0 ? (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               No location history for this device yet.
             </div>
@@ -115,9 +127,15 @@ export default function DeviceHistoryPage() {
                 attribution="&copy; OpenStreetMap contributors"
               />
               <Polyline positions={path} pathOptions={{ color: '#2563EB', weight: 4 }} />
-              <Marker position={path[path.length - 1]}>
-                <Popup>Most recent point</Popup>
-              </Marker>
+
+              {/* Playback marker follows the scrubber/play position */}
+              {playbackPosition && (
+                <Marker position={playbackPosition}>
+                  <Popup>
+                    {new Date(playback.currentPing.createdAt).toLocaleTimeString()}
+                  </Popup>
+                </Marker>
+              )}
             </MapContainer>
           )}
         </div>

@@ -128,6 +128,11 @@ export default function AnalyticsPage() {
 
       <div className="glass rounded-2xl shadow-soft p-5">
         <h2 className="text-sm font-semibold mb-4">Per-device breakdown</h2>
+        {overview.perDevice.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">
+            No buses registered yet. Add one in Device Center to see analytics here.
+          </p>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -152,6 +157,7 @@ export default function AnalyticsPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

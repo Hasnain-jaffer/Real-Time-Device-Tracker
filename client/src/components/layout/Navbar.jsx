@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../../lib/apiClient';
 import { useAuth } from '../../app/AuthContext';
 import { useSocket } from '../../app/SocketProvider';
+import GlobalSearchModal from '../../features/search/components/GlobalSearchModal';
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -20,6 +21,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,6 +54,17 @@ export default function Navbar() {
     navigate('/login');
   }
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <nav className="glass sticky top-0 z-40 px-4 sm:px-6 py-3 shadow-soft">
       <div className="flex items-center justify-between">
@@ -74,6 +87,13 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="text-xs rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1.5"
+          >
+            🔍 Search <kbd className="text-[10px] opacity-60">Ctrl K</kbd>
+          </button>
+          <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
           <Link to="/notifications" className="relative">
             <span className="text-xl">🔔</span>
             {unreadCount > 0 && (

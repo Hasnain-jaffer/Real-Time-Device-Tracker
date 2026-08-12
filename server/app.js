@@ -20,6 +20,7 @@ import deviceRoutes from './src/routes/device.routes.js';
 import geofenceRoutes from './src/routes/geofence.routes.js';
 import analyticsRoutes from './src/routes/analytics.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
+import searchRoutes from './src/routes/search.routes.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +60,8 @@ app.use('/api/geofences', geofenceRoutes);
 app.use('/api/analytics', analyticsRoutes);
 // --- Admin routes ---
 app.use('/api/admin', adminRoutes);
+// --- Search routes ---
+app.use('/api/search', searchRoutes);
 
 // --- Socket handlers (existing V1 logic, unchanged) ---
 registerLocationHandlers(io);

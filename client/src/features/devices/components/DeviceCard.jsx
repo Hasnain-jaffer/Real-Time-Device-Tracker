@@ -53,12 +53,14 @@ export default function DeviceCard({ device, onRename, onDelete, onToggleTrackin
           </code>
           <button
             onClick={() => setShowKey((prev) => !prev)}
+            aria-label={showKey ? 'Hide device key' : 'Show device key'}
             className="flex-shrink-0 text-xs text-primary hover:underline"
           >
             {showKey ? 'Hide' : 'Show'}
           </button>
           <button
             onClick={handleCopyKey}
+            aria-label="Copy device key to clipboard"
             className="flex-shrink-0 text-xs text-primary hover:underline"
           >
             Copy

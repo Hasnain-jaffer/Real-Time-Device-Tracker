@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { to: '/tracking', label: 'Live Tracking' },
   { to: '/history', label: 'History' },
   { to: '/stops', label: 'Stops' },
+  { to: '/analytics', label: 'Analytics' },
 ];
 
 export default function Navbar() {

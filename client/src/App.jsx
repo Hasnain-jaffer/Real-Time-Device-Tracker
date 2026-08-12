@@ -27,6 +27,7 @@ import { ToastProvider } from './app/ToastContext';
 import DeviceCenterPage from './pages/DeviceCenterPage';
 import DeviceDetailsPage from './pages/DeviceDetailsPage';
 import GeofencesPage from './pages/GeofencesPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function Protected({ children }) {
   return (
@@ -58,6 +59,7 @@ export default function App() {
               <Route path="/devices" element={<Protected><DeviceCenterPage /></Protected>} />
               <Route path="/devices/:id" element={<Protected><DeviceDetailsPage /></Protected>} />
               <Route path="/stops" element={<Protected><GeofencesPage /></Protected>} />
+              <Route path="/analytics" element={<Protected><AnalyticsPage /></Protected>} />
 
               <Route path="/help" element={<HelpCenterPage />} />
               <Route path="/contact" element={<ContactUsPage />} />

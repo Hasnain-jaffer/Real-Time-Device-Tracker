@@ -28,6 +28,8 @@ import DeviceCenterPage from './pages/DeviceCenterPage';
 import DeviceDetailsPage from './pages/DeviceDetailsPage';
 import GeofencesPage from './pages/GeofencesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import AdminRoute from './app/AdminRoute';
+import AdminPage from './pages/AdminPage';
 
 function Protected({ children }) {
   return (
@@ -44,6 +46,16 @@ export default function App() {
       <AuthProvider>
         <SocketProvider>
             <Routes>
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AppLayout>
+                      <AdminPage />
+                    </AppLayout>
+                  </AdminRoute>
+                }
+              />
               <Route path="/" element={<LandingPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />

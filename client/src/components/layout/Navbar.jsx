@@ -16,6 +16,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { socket } = useSocket();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -37,8 +38,6 @@ export default function Navbar() {
       clearInterval(interval);
     };
   }, []);
-  
-  const { socket } = useSocket();
 
   useEffect(() => {
     function handleNewNotification() {
@@ -67,6 +66,11 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          {user?.role === 'admin' && (
+            <Link to="/admin" className="text-sm hover:text-primary transition">
+              Admin
+            </Link>
+          )}
         </div>
 
         <div className="hidden md:flex items-center gap-4">
@@ -118,6 +122,15 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          {user?.role === 'admin' && (
+            <Link
+              to="/admin"
+              onClick={() => setIsMenuOpen(false)}
+              className="px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              🛡️ Admin
+            </Link>
+          )}
           <Link
             to="/notifications"
             onClick={() => setIsMenuOpen(false)}

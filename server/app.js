@@ -23,6 +23,7 @@ import adminRoutes from './src/routes/admin.routes.js';
 import searchRoutes from './src/routes/search.routes.js';
 
 const app = express();
+app.set('trust proxy', 1); // required on Render/behind a reverse proxy for secure cookies + accurate IPs
 const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {

@@ -3,7 +3,10 @@ import Device from '../models/device.model.js';
 
 export async function listMyDevices(req, res, next) {
   try {
-    const devices = await Device.find({ ownerId: req.user.id }).sort({ createdAt: -1 });
+    // Buses are admin-managed but visible to every authenticated user (students
+    // need to see all buses/routes to find their own stop) — no longer filtered
+    // by ownerId.
+    const devices = await Device.find().sort({ createdAt: -1 });
     res.json({ devices });
   } catch (err) {
     next(err);
@@ -33,7 +36,7 @@ export async function createDevice(req, res, next) {
 
 export async function getDevice(req, res, next) {
   try {
-    const device = await Device.findOne({ _id: req.params.id, ownerId: req.user.id });
+    const device = await Device.findById(req.params.id);
     if (!device) return res.status(404).json({ message: 'Device not found' });
     res.json({ device });
   } catch (err) {

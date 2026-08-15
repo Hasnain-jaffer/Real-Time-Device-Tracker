@@ -6,15 +6,16 @@ import {
   updateGeofence,
   deleteGeofence,
 } from '../controllers/geofence.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 
 router.get('/', listGeofences);
-router.post('/', createGeofence);
-router.patch('/:id', updateGeofence);
-router.delete('/:id', deleteGeofence);
+
+router.post('/', authorize('admin'), createGeofence);
+router.patch('/:id', authorize('admin'), updateGeofence);
+router.delete('/:id', authorize('admin'), deleteGeofence);
 
 export default router;

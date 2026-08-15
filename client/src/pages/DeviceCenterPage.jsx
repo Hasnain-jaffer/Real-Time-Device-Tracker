@@ -5,10 +5,13 @@ import DeviceCard from '../features/devices/components/DeviceCard';
 import DeviceFormModal from '../features/devices/components/DeviceFormModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useToast } from '../app/ToastContext';
+import { useAuth } from '../app/AuthContext';
 
 export default function DeviceCenterPage() {
   const { devices, isLoading, error, addDevice, editDevice, removeDevice, regenerateKey } = useDevices();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -63,12 +66,14 @@ export default function DeviceCenterPage() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-semibold">Device Center</h1>
-        <button
-          onClick={openAddModal}
-          className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-medium shadow-soft hover:bg-primary-600 transition"
-        >
-          + Register Bus
-        </button>
+        {isAdmin && (
+          <button
+            onClick={openAddModal}
+            className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-medium shadow-soft hover:bg-primary-600 transition"
+          >
+            + Register Bus
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -120,17 +125,19 @@ export default function DeviceCenterPage() {
               onDelete={handleDelete}
               onToggleTracking={handleToggleTracking}
               onRegenerateKey={handleRegenerateKey}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
       )}
 
+      {isAdmin && (
       <DeviceFormModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
-        initialValues={editingDevice}
       />
+      )}
     </div>
   );
 }

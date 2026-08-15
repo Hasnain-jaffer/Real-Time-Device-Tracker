@@ -70,8 +70,16 @@ export default function App() {
                 <Route path="/tracking" element={<Protected><LiveTrackingPage /></Protected>} />
                 <Route path="/history" element={<Protected><DeviceHistoryPage /></Protected>} />
                 <Route path="/stops" element={<Protected><GeofencesPage /></Protected>} />
-                <Route path="/analytics" element={<Protected><AnalyticsPage /></Protected>} />
-                <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
+<Route
+                  path="/analytics"
+                  element={
+                    <AdminRoute>
+                      <AppLayout>
+                        <AnalyticsPage />
+                      </AppLayout>
+                    </AdminRoute>
+                  }
+                />                <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
                 <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
                 <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
 

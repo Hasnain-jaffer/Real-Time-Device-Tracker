@@ -8,8 +8,7 @@ const STATUS_STYLES = {
   offline: { dot: 'bg-gray-400', label: 'Offline', badge: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' },
 };
 
-export default function DeviceCard({ device, onRename, onDelete, onToggleTracking, onRegenerateKey }) {
-  const { showToast } = useToast();
+export default function DeviceCard({ device, onRename, onDelete, onToggleTracking, onRegenerateKey, isAdmin = true }) {  const { showToast } = useToast();
   const [showKey, setShowKey] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -45,8 +44,10 @@ export default function DeviceCard({ device, onRename, onDelete, onToggleTrackin
       </p>
 
       {/* Device key block */}
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Device Key</p>
+{isAdmin && (
+      <>
+      {/* Device key block */}
+      <div className="space-y-1.5">        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Device Key</p>
         <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2">
           <code className="flex-1 min-w-0 text-xs font-mono truncate">
             {showKey ? device.deviceKey : '••••••••••••••••••••••••'}
@@ -107,8 +108,10 @@ export default function DeviceCard({ device, onRename, onDelete, onToggleTrackin
           >
             Confirm Delete?
           </button>
-        )}
+       )}
       </div>
+      </>
+      )}
     </div>
   );
 }

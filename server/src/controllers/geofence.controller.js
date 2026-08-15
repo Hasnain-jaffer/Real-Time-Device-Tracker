@@ -3,7 +3,8 @@ import Geofence from '../models/geofence.model.js';
 
 export async function listGeofences(req, res, next) {
   try {
-    const geofences = await Geofence.find({ ownerId: req.user.id }).sort({ createdAt: -1 });
+    // Stops are admin-managed but visible to all users, same reasoning as devices.
+    const geofences = await Geofence.find().sort({ createdAt: -1 });
     res.json({ geofences });
   } catch (err) {
     next(err);

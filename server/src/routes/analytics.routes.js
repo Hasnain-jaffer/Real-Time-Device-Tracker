@@ -5,11 +5,11 @@ import {
   getDailyDistanceChart,
   getStopActivity,
 } from '../controllers/analytics.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(authenticate, authorize('admin'));
 
 router.get('/overview', getOverviewAnalytics);
 router.get('/daily-distance', getDailyDistanceChart);

@@ -12,7 +12,6 @@ const NAV_LINKS = [
   { to: '/tracking', label: 'Live Tracking' },
   { to: '/history', label: 'History' },
   { to: '/stops', label: 'Stops' },
-  { to: '/analytics', label: 'Analytics' },
 ];
 
 export default function Navbar() {
@@ -79,10 +78,15 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          {user?.role === 'admin' && (
-            <Link to="/admin" className="text-sm hover:text-primary transition">
-              Admin
-            </Link>
+         {user?.role === 'admin' && (
+            <>
+              <Link to="/analytics" className="text-sm hover:text-primary transition">
+                Analytics
+              </Link>
+              <Link to="/admin" className="text-sm hover:text-primary transition">
+                Admin
+              </Link>
+            </>
           )}
         </div>
 
@@ -143,13 +147,22 @@ export default function Navbar() {
             </Link>
           ))}
           {user?.role === 'admin' && (
-            <Link
-              to="/admin"
-              onClick={() => setIsMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-              🛡️ Admin
-            </Link>
+            <>
+              <Link
+                to="/analytics"
+                onClick={() => setIsMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                📊 Analytics
+              </Link>
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                🛡️ Admin
+              </Link>
+            </>
           )}
           <Link
             to="/notifications"

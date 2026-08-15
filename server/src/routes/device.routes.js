@@ -8,17 +8,20 @@ import {
   deleteDevice,
   regenerateDeviceKey,
 } from '../controllers/device.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 
+// Viewing buses is available to every logged-in user
 router.get('/', listMyDevices);
-router.post('/', createDevice);
 router.get('/:id', getDevice);
-router.patch('/:id', updateDevice);
-router.delete('/:id', deleteDevice);
-router.post('/:id/regenerate-key', regenerateDeviceKey);
+
+// Managing buses is admin-only
+router.post('/', authorize('admin'), createDevice);
+router.patch('/:id', authorize('admin'), updateDevice);
+router.delete('/:id', authorize('admin'), deleteDevice);
+router.post('/:id/regenerate-key', authorize('admin'), regenerateDeviceKey);
 
 export default router;

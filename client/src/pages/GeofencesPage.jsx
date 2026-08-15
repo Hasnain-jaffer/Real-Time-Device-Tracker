@@ -4,12 +4,15 @@ import { useGeofences } from '../features/geofences/hooks/useGeofences';
 import GeofenceFormModal from '../features/geofences/components/GeofenceFormModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useToast } from '../app/ToastContext';
+import { useAuth } from '../app/AuthContext';
 
 export default function GeofencesPage() {
   const { geofences, isLoading, addGeofence, editGeofence, removeGeofence } = useGeofences();
   const { showToast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   async function handleSubmit(payload) {
     if (editing) {
@@ -39,15 +42,17 @@ export default function GeofencesPage() {
             Get notified when a bus arrives at or leaves a stop.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setModalOpen(true);
-          }}
-          className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-medium shadow-soft hover:bg-primary-600 transition"
-        >
-          + Add Stop
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setModalOpen(true);
+            }}
+            className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-medium shadow-soft hover:bg-primary-600 transition"
+          >
+            + Add Stop
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -75,42 +80,54 @@ export default function GeofencesPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={fence.isActive}
-                    onChange={() => handleToggleActive(fence)}
-                  />
-                  Active
-                </label>
-                <button
-                  onClick={() => {
-                    setEditing(fence);
-                    setModalOpen(true);
-                  }}
-                  className="text-xs rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              {isAdmin ? (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={fence.isActive}
+                      onChange={() => handleToggleActive(fence)}
+                    />
+                    Active
+                  </label>
+                  <button
+                    onClick={() => {
+                      setEditing(fence);
+                      setModalOpen(true);
+                    }}
+                    className="text-xs rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(fence._id)}
+                    className="text-xs rounded-lg border border-danger text-danger px-3 py-1.5 hover:bg-danger/10 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ) : (
+                <span
+                  className={`text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ${
+                    fence.isActive ? 'bg-success/10 text-success' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                  }`}
                 >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(fence._id)}
-                  className="text-xs rounded-lg border border-danger text-danger px-3 py-1.5 hover:bg-danger/10 transition"
-                >
-                  Delete
-                </button>
-              </div>
+                  {fence.isActive ? 'Active' : 'Inactive'}
+                </span>
+              )}
             </div>
           ))}
         </div>
       )}
 
+     {isAdmin && (
       <GeofenceFormModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         initialValues={editing}
       />
+      )}
     </div>
   );
 }

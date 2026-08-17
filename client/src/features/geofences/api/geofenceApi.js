@@ -1,8 +1,10 @@
 // client/src/features/geofences/api/geofenceApi.js
 import apiClient from '../../../lib/apiClient';
 
-export function listGeofences() {
-  return apiClient.get('/geofences').then((res) => res.data.geofences);
+export function listGeofences(deviceId) {
+  return apiClient
+    .get('/geofences', { params: deviceId ? { deviceId } : {} })
+    .then((res) => res.data.geofences);
 }
 
 export function createGeofence(payload) {

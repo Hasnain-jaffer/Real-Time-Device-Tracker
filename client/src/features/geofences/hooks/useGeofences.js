@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as geofenceApi from '../api/geofenceApi';
 
-export function useGeofences() {
+export function useGeofences(deviceId) {
   const [geofences, setGeofences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -11,20 +11,20 @@ export function useGeofences() {
     setIsLoading(true);
     setError('');
     try {
-      setGeofences(await geofenceApi.listGeofences());
+      setGeofences(await geofenceApi.listGeofences(deviceId));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load stops');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [deviceId]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   async function addGeofence(payload) {
-    const fence = await geofenceApi.createGeofence(payload);
+    const fence = await geofenceApi.createGeofence({ ...payload, deviceIds: deviceId ? [deviceId] : payload.deviceIds });
     setGeofences((prev) => [fence, ...prev]);
     return fence;
   }

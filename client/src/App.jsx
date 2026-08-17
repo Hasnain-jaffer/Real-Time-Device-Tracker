@@ -20,8 +20,7 @@ const DeviceCenterPage = lazy(() => import('./pages/DeviceCenterPage'));
 const DeviceDetailsPage = lazy(() => import('./pages/DeviceDetailsPage'));
 const LiveTrackingPage = lazy(() => import('./pages/LiveTrackingPage'));
 const DeviceHistoryPage = lazy(() => import('./pages/DeviceHistoryPage'));
-const GeofencesPage = lazy(() => import('./pages/GeofencesPage'));
-const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const DeviceStopsPage = lazy(() => import('./pages/DeviceStopsPage'));const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
@@ -69,8 +68,8 @@ export default function App() {
                 <Route path="/devices/:id" element={<Protected><DeviceDetailsPage /></Protected>} />
                 <Route path="/tracking" element={<Protected><LiveTrackingPage /></Protected>} />
                 <Route path="/history" element={<Protected><DeviceHistoryPage /></Protected>} />
-                <Route path="/stops" element={<Protected><GeofencesPage /></Protected>} />
-<Route
+                <Route path="/devices/:id/stops" element={<Protected><DeviceStopsPage /></Protected>} />
+                <Route
                   path="/analytics"
                   element={
                     <AdminRoute>

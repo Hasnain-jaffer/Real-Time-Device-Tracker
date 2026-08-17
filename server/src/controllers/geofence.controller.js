@@ -3,8 +3,9 @@ import Geofence from '../models/geofence.model.js';
 
 export async function listGeofences(req, res, next) {
   try {
-    // Stops are admin-managed but visible to all users, same reasoning as devices.
-    const geofences = await Geofence.find().sort({ createdAt: -1 });
+    const { deviceId } = req.query;
+    const query = deviceId ? { deviceIds: deviceId } : {};
+    const geofences = await Geofence.find(query).sort({ createdAt: -1 });
     res.json({ geofences });
   } catch (err) {
     next(err);
@@ -16,6 +17,9 @@ export async function createGeofence(req, res, next) {
     const { name, type, latitude, longitude, radiusMeters, color, deviceIds } = req.body;
     if (!name || latitude == null || longitude == null) {
       return res.status(400).json({ message: 'Name, latitude, and longitude are required' });
+    }
+    if (!deviceIds || deviceIds.length === 0) {
+      return res.status(400).json({ message: 'A stop must be linked to at least one bus/route' });
     }
 
     const geofence = await Geofence.create({

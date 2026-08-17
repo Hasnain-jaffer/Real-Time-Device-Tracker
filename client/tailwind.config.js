@@ -31,6 +31,25 @@ export default {
         danger: {
           DEFAULT: '#EF4444',
         },
+        graphite: {
+          DEFAULT: '#1C1E1F',
+          soft: '#26282A',
+        },
+        ivory: {
+          DEFAULT: '#FAF8F3',
+          soft: '#F1EEE5',
+        },
+        sage: {
+          DEFAULT: '#3F6B52',
+          light: '#5C8A6E',
+          dark: '#2E5140',
+        },
+        eta: {
+          DEFAULT: '#C98A2C',
+        },
+        brick: {
+          DEFAULT: '#B3432E',
+        },
       },
       borderRadius: {
         xl: '1rem',

@@ -2,8 +2,9 @@
 import Geofence from '../models/geofence.model.js';
 import Notification from '../models/notification.model.js';
 import Device from '../models/device.model.js';
+import User from '../models/user.model.js';
 
-const EXIT_BUFFER_MULTIPLIER = 1.3; // must move 30% past the radius to count as "exited"
+const EXIT_BUFFER_MULTIPLIER = 1.3;
 
 function haversineMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -15,11 +16,12 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export async function evaluateGeofences({ deviceId, ownerId, deviceName, latitude, longitude, io }) {
+export async function evaluateGeofences({ deviceId, deviceName, latitude, longitude, io }) {
   if (!deviceId) return;
 
   try {
-    const geofences = await Geofence.find({ ownerId, isActive: true });
+    // Stops/geofences are shared (admin-managed, visible to all) — no ownerId filter anymore.
+    const geofences = await Geofence.find({ isActive: true });
     if (geofences.length === 0) return;
 
     const device = await Device.findById(deviceId).select('insideGeofenceIds');
@@ -35,9 +37,6 @@ export async function evaluateGeofences({ deviceId, ownerId, deviceName, latitud
 
       const distance = haversineMeters(latitude, longitude, fence.latitude, fence.longitude);
       const wasInside = previouslyInside.has(fence._id.toString());
-
-      // Hysteresis: use the tighter radius to enter, the wider radius to stay/exit.
-      // This stops rapid flip-flopping when a device sits near the boundary.
       const isInside = wasInside
         ? distance <= fence.radiusMeters * EXIT_BUFFER_MULTIPLIER
         : distance <= fence.radiusMeters;
@@ -52,35 +51,37 @@ export async function evaluateGeofences({ deviceId, ownerId, deviceName, latitud
 
     await Device.updateOne({ _id: deviceId }, { insideGeofenceIds: [...currentlyInside] });
 
+    // Notify every user — this is a shared bus-tracking app, everyone can be
+    // interested in any bus's arrival/departure at a stop.
+    const allUsers = await User.find().select('_id');
+
     for (const fenceId of entered) {
       const fence = geofences.find((f) => f._id.toString() === fenceId);
       if (!fence) continue;
-      const notif = await Notification.create({
-        userId: ownerId,
+      await broadcastNotification(io, allUsers, {
         type: 'geofence-enter',
         title: `${deviceName} arrived at ${fence.name}`,
         message: `${deviceName} entered the ${fence.name} zone.`,
       });
-      pushToUser(io, ownerId, notif);
     }
 
     for (const fenceId of exited) {
       const fence = geofences.find((f) => f._id.toString() === fenceId);
       if (!fence) continue;
-      const notif = await Notification.create({
-        userId: ownerId,
+      await broadcastNotification(io, allUsers, {
         type: 'geofence-exit',
         title: `${deviceName} left ${fence.name}`,
         message: `${deviceName} exited the ${fence.name} zone.`,
       });
-      pushToUser(io, ownerId, notif);
     }
   } catch (err) {
     console.error('[geofenceEvaluator] Failed to evaluate geofences:', err.message);
   }
 }
 
-function pushToUser(io, ownerId, notification) {
-  if (!io) return;
-  io.to(`user:${ownerId.toString()}`).emit('notification', notification);
+async function broadcastNotification(io, users, { type, title, message }) {
+  for (const user of users) {
+    const notif = await Notification.create({ userId: user._id, type, title, message });
+    if (io) io.to(`user:${user._id.toString()}`).emit('notification', notif);
+  }
 }

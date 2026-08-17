@@ -71,9 +71,8 @@ export default function Navbar() {
           Device Tracker
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map((link) => (
+{/* Desktop links */}
+        <div className="hidden lg:flex items-center gap-4 flex-wrap">          {NAV_LINKS.map((link) => (
             <Link key={link.to} to={link.to} className="text-sm hover:text-primary transition">
               {link.label}
             </Link>
@@ -90,12 +89,13 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="hidden md:flex items-center gap-4">
-          <button
+<div className="hidden lg:flex items-center gap-3">
+            <button
             onClick={() => setIsSearchOpen(true)}
-            className="text-xs rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1.5"
+            className="text-xs rounded-lg border border-gray-300 dark:border-gray-700 w-9 h-9 xl:w-auto xl:px-3 xl:py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center justify-center gap-1.5"
           >
-            🔍 Search <kbd className="text-[10px] opacity-60">Ctrl K</kbd>
+            🔍 <span className="hidden xl:inline">Search</span>
+            <kbd className="hidden xl:inline text-[10px] opacity-60">Ctrl K</kbd>
           </button>
           <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
           <Link to="/notifications" className="relative">
@@ -125,7 +125,7 @@ export default function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-700"
+          className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 dark:border-gray-700"
           onClick={() => setIsMenuOpen((prev) => !prev)}
           aria-label="Toggle menu"
         >
@@ -135,7 +135,7 @@ export default function Navbar() {
 
       {/* Mobile dropdown */}
       {isMenuOpen && (
-        <div className="md:hidden mt-3 flex flex-col gap-1 pb-2">
+        <div className="lg:hidden mt-3 flex flex-col gap-1 pb-2">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.to}

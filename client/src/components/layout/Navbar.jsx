@@ -70,13 +70,14 @@ export default function Navbar() {
           Device Tracker
         </Link>
 
-{/* Desktop links */}
-        <div className="hidden lg:flex items-center gap-4 flex-wrap">          {NAV_LINKS.map((link) => (
+        {/* Desktop links */}
+        <div className="hidden lg:flex items-center gap-4 flex-wrap">
+          {NAV_LINKS.map((link) => (
             <Link key={link.to} to={link.to} className="text-sm hover:text-primary transition">
               {link.label}
             </Link>
           ))}
-         {user?.role === 'admin' && (
+          {user?.role === 'admin' && (
             <>
               <Link to="/analytics" className="text-sm hover:text-primary transition">
                 Analytics
@@ -88,8 +89,8 @@ export default function Navbar() {
           )}
         </div>
 
-<div className="hidden lg:flex items-center gap-3">
-            <button
+        <div className="hidden lg:flex items-center gap-3">
+          <button
             onClick={() => setIsSearchOpen(true)}
             className="text-xs rounded-lg border border-gray-300 dark:border-gray-700 w-9 h-9 xl:w-auto xl:px-3 xl:py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center justify-center gap-1.5"
           >
@@ -97,6 +98,7 @@ export default function Navbar() {
             <kbd className="hidden xl:inline text-[10px] opacity-60">Ctrl K</kbd>
           </button>
           <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
           <Link to="/notifications" className="relative">
             <span className="text-xl">🔔</span>
             {unreadCount > 0 && (
@@ -105,15 +107,18 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+
           <Link to="/settings" className="text-sm hover:text-primary transition">
             ⚙️
           </Link>
+
           <Link
             to="/profile"
             className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium"
           >
             {user?.name?.[0]?.toUpperCase() || 'U'}
           </Link>
+
           <button
             onClick={handleLogout}
             className="text-sm rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition"

@@ -4,12 +4,15 @@ import { useDeviceDetails } from '../features/devices/hooks/useDeviceDetails';
 import MiniTimeline from '../features/devices/components/MiniTimeline';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import DeviceHealthPanel from '../features/devices/components/DeviceHealthPanel';
+import { useDeviceSchedule } from '../features/devices/hooks/useDeviceSchedule';
+import ScheduleTable from '../features/devices/components/ScheduleTable';
 
 
 export default function DeviceDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { device, recentPings, notifications, isLoading, error } = useDeviceDetails(id);
+   const { stops: scheduleStops, isLoading: scheduleLoading } = useDeviceSchedule(device?._id);
 
   if (isLoading) {
     return (
@@ -113,10 +116,16 @@ export default function DeviceDetailsPage() {
         </div>
       </div>
 
+            <div className="glass rounded-2xl shadow-soft p-6">
+        <h2 className="text-sm font-semibold mb-1">Route schedule</h2>
+        <p className="text-xs text-gray-400 mb-4">Expected vs actual arrival at each stop today.</p>
+        <ScheduleTable stops={scheduleStops} isLoading={scheduleLoading} />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Device health */}
         <DeviceHealthPanel device={device} />
-
+        
         {/* Mini timeline */}
         <div className="glass rounded-2xl shadow-soft p-6">
           <h2 className="text-sm font-semibold mb-4">Recent activity</h2>

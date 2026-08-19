@@ -58,20 +58,24 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
     for (const fenceId of entered) {
       const fence = geofences.find((f) => f._id.toString() === fenceId);
       if (!fence) continue;
-      await broadcastNotification(io, allUsers, {
+            await broadcastNotification(io, allUsers, {
         type: 'geofence-enter',
         title: `${deviceName} arrived at ${fence.name}`,
         message: `${deviceName} entered the ${fence.name} zone.`,
+        deviceId,
+        geofenceId: fence._id,
       });
     }
 
     for (const fenceId of exited) {
       const fence = geofences.find((f) => f._id.toString() === fenceId);
       if (!fence) continue;
-      await broadcastNotification(io, allUsers, {
+            await broadcastNotification(io, allUsers, {
         type: 'geofence-exit',
         title: `${deviceName} left ${fence.name}`,
         message: `${deviceName} exited the ${fence.name} zone.`,
+        deviceId,
+        geofenceId: fence._id,
       });
     }
   } catch (err) {
@@ -79,9 +83,9 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
   }
 }
 
-async function broadcastNotification(io, users, { type, title, message }) {
+async function broadcastNotification(io, users, { type, title, message, deviceId, geofenceId }) {
   for (const user of users) {
-    const notif = await Notification.create({ userId: user._id, type, title, message });
+    const notif = await Notification.create({ userId: user._id, type, title, message, deviceId, geofenceId });
     if (io) io.to(`user:${user._id.toString()}`).emit('notification', notif);
   }
 }

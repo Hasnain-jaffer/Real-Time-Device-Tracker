@@ -22,6 +22,17 @@ const notificationSchema = new mongoose.Schema(
       ],
       required: true,
     },
+        deviceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Device',
+      default: null,
+      index: true,
+    },
+    geofenceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Geofence',
+      default: null,
+    },
     title: {
       type: String,
       required: true,

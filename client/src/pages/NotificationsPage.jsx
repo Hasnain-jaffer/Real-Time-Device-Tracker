@@ -7,8 +7,10 @@ const TYPE_ICONS = {
   'device-online': '🟢',
   'device-offline': '⚪',
   'security-alert': '🔒',
-  'system-message': 'ℹ️',
+  'system-message': '⏱️',
   'location-update': '📍',
+  'geofence-enter': '🚏',
+  'geofence-exit': '👋',
 };
 
 export default function NotificationsPage() {

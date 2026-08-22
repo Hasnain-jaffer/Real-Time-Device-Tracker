@@ -6,6 +6,8 @@ function formatDelay(minutes) {
   return { label: `${minutes} min late`, tone: 'danger' };
 }
 
+const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
+
 export default function ScheduleTable({ stops, isLoading, tokens = {} }) {
   const surface = tokens['--bg-surface'] || '#FFFFFF';
   const page = tokens['--bg-page'] || '#F4EFE6';
@@ -19,12 +21,12 @@ export default function ScheduleTable({ stops, isLoading, tokens = {} }) {
   const critical = tokens['--accent-critical'] || '#B94A3A';
 
   if (isLoading) {
-    return <div className="h-32 rounded-xl animate-pulse" style={{ backgroundColor: page }} />;
+    return <div className="h-32 rounded-2xl animate-pulse" style={{ backgroundColor: page }} />;
   }
 
   if (stops.length === 0) {
     return (
-      <p className="text-sm text-center py-6" style={{ color: textMuted }}>
+      <p className="text-sm text-center py-8" style={{ color: textMuted }}>
         No schedule set up for this bus yet.
       </p>
     );
@@ -49,17 +51,17 @@ export default function ScheduleTable({ stops, isLoading, tokens = {} }) {
           return (
             <div
               key={stop.stopName + stop.sequence}
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded-xl"
-              style={{ backgroundColor: surface, border: `1px solid ${border}` }}
+              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded-xl transition-all hover:shadow-sm"
+              style={{ backgroundColor: surface, border: `1px solid ${border}`, boxShadow: cardShadow }}
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: textPrimary }}>{stop.stopName}</p>
-                <p className="text-xs" style={{ color: textMuted }}>
+                <p className="text-sm font-semibold" style={{ color: textPrimary }}>{stop.stopName}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: textMuted }}>
                   Scheduled {stop.expectedTime}
                   {stop.actualArrival && ` · Arrived ${new Date(stop.actualArrival).toLocaleTimeString()}`}
                 </p>
               </div>
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style={badgeStyle}>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap" style={badgeStyle}>
                 {delay.label}
               </span>
             </div>

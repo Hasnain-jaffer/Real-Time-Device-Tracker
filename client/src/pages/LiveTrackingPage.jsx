@@ -1,6 +1,5 @@
 // client/src/pages/LiveTrackingPage.jsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
@@ -34,15 +33,23 @@ const darkTokens = {
   '--badge-eta-text': '#E3B15E',
 };
 
-function RecenterControl({ position, requestId }) {
+function RecenterControl({ position }) {
   const map = useMap();
+
+  useEffect(() => {
+    // Fix: force Leaflet to re-measure its container after mount/layout settles
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [map]);
+
   function recenter() {
     if (position) map.setView(position, map.getZoom());
   }
   RecenterControl.recenter = recenter;
   return null;
 }
-
 export default function LiveTrackingPage() {
   const { trackedDevices } = useTrackedDevices();
   const { theme } = useTheme();

@@ -184,11 +184,12 @@ export default function DeviceCenterPage() {
         )}
 
         {isAdmin && (
-          <DeviceFormModal
+            <DeviceFormModal
             isOpen={modalOpen}
             onClose={() => setModalOpen(false)}
             onSubmit={handleSubmit}
             initialValues={editingDevice}
+            tokens={tokens}
           />
         )}
       </div>

@@ -6,14 +6,25 @@ function formatDelay(minutes) {
   return { label: `${minutes} min late`, tone: 'danger' };
 }
 
-export default function ScheduleTable({ stops, isLoading }) {
+export default function ScheduleTable({ stops, isLoading, tokens = {} }) {
+  const surface = tokens['--bg-surface'] || '#FFFFFF';
+  const page = tokens['--bg-page'] || '#F4EFE6';
+  const border = tokens['--border'] || '#E1D9C8';
+  const textPrimary = tokens['--text-primary'] || '#173B32';
+  const textMuted = tokens['--text-muted'] || '#9C8F73';
+  const badgeSuccessBg = tokens['--badge-success-bg'] || '#EAF3DE';
+  const badgeSuccessText = tokens['--badge-success-text'] || '#3B6D26';
+  const badgeEtaBg = tokens['--badge-eta-bg'] || '#F6E9CE';
+  const badgeEtaText = tokens['--badge-eta-text'] || '#8A6423';
+  const critical = tokens['--accent-critical'] || '#B94A3A';
+
   if (isLoading) {
-    return <div className="h-32 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />;
+    return <div className="h-32 rounded-xl animate-pulse" style={{ backgroundColor: page }} />;
   }
 
   if (stops.length === 0) {
     return (
-      <p className="text-sm text-gray-400 text-center py-6">
+      <p className="text-sm text-center py-6" style={{ color: textMuted }}>
         No schedule set up for this bus yet.
       </p>
     );
@@ -26,29 +37,29 @@ export default function ScheduleTable({ stops, isLoading }) {
         .sort((a, b) => a.sequence - b.sequence)
         .map((stop) => {
           const delay = formatDelay(stop.delayMinutes);
+          const badgeStyle =
+            delay.tone === 'success'
+              ? { backgroundColor: badgeSuccessBg, color: badgeSuccessText }
+              : delay.tone === 'warning'
+                ? { backgroundColor: badgeEtaBg, color: badgeEtaText }
+                : delay.tone === 'danger'
+                  ? { backgroundColor: critical + '1A', color: critical }
+                  : { backgroundColor: page, color: textMuted };
+
           return (
             <div
               key={stop.stopName + stop.sequence}
-              className="flex items-center justify-between px-4 py-3 rounded-xl glass shadow-soft"
+              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded-xl"
+              style={{ backgroundColor: surface, border: `1px solid ${border}` }}
             >
-              <div>
-                <p className="text-sm font-medium">{stop.stopName}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: textPrimary }}>{stop.stopName}</p>
+                <p className="text-xs" style={{ color: textMuted }}>
                   Scheduled {stop.expectedTime}
                   {stop.actualArrival && ` · Arrived ${new Date(stop.actualArrival).toLocaleTimeString()}`}
                 </p>
               </div>
-              <span
-                className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                  delay.tone === 'success'
-                    ? 'bg-success/10 text-success'
-                    : delay.tone === 'warning'
-                      ? 'bg-warning/10 text-warning'
-                      : delay.tone === 'danger'
-                        ? 'bg-danger/10 text-danger'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                }`}
-              >
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style={badgeStyle}>
                 {delay.label}
               </span>
             </div>

@@ -19,18 +19,18 @@ const NAV_ITEMS = [
 
 const lightTokens = {
   '--bg-sidebar': '#173B32',
-  '--border': '#E1D9C8',
+  '--border': 'rgba(255,255,255,0.08)',
   '--text-nav-active': '#FFFFFF',
-  '--text-nav-inactive': 'rgba(255,255,255,0.6)',
+  '--text-nav-inactive': 'rgba(255,255,255,0.55)',
   '--accent-primary': '#5E8C61',
   '--badge-eta-bg': '#F6E9CE',
   '--badge-eta-text': '#8A6423',
-  '--nav-active-bg': 'rgba(255,255,255,0.14)',
+  '--nav-active-bg': 'rgba(255,255,255,0.12)',
 };
 
 const darkTokens = {
   '--bg-sidebar': '#0E1F1B',
-  '--border': '#263531',
+  '--border': 'rgba(255,255,255,0.06)',
   '--text-nav-active': '#F1EEE4',
   '--text-nav-inactive': '#8A9690',
   '--accent-primary': '#79B37C',
@@ -83,7 +83,6 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Close drawer automatically whenever the route changes
   useEffect(() => {
     setIsDrawerOpen(false);
   }, [location.pathname]);
@@ -94,7 +93,7 @@ export default function Navbar() {
   }
 
   function navLinkClass({ isActive }) {
-    return `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${
+    return `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-colors duration-150 whitespace-nowrap ${
       isActive ? 'font-semibold' : ''
     }`;
   }
@@ -112,14 +111,14 @@ export default function Navbar() {
         const showAdminBadge = item.to === '/admin' && isAdmin && isOnAdminRoute;
         return (
           <NavLink key={item.to} to={item.to} className={navLinkClass} style={navLinkStyle} onClick={onItemClick}>
-            <span aria-hidden="true">{item.icon}</span>
-            <span className="flex-1">{item.label}</span>
+            <span className="flex-shrink-0" aria-hidden="true">{item.icon}</span>
+            <span className="flex-1 truncate">{item.label}</span>
             {showAdminBadge && (
               <span
-                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                className="flex-shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full leading-none"
                 style={{ backgroundColor: 'var(--badge-eta-bg)', color: 'var(--badge-eta-text)' }}
               >
-                Admin mode
+                Admin
               </span>
             )}
           </NavLink>
@@ -128,63 +127,90 @@ export default function Navbar() {
     </>
   );
 
-  const ThemeToggleAndUser = ({ onNavigate }) => (
-    <div className="border-t pt-2 px-1 mt-2" style={{ borderColor: 'var(--border)' }}>
-      <button
-        onClick={toggleTheme}
-        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm w-full transition-colors duration-150"
-        style={{ color: 'var(--text-nav-inactive)' }}
+const ThemeToggleAndUser = ({ onNavigate }) => (
+  <div className="border-t pt-3 px-1 mt-2" style={{ borderColor: 'var(--border)' }}>
+    
+    {/* THEME TOGGLE */}
+    <button
+      onClick={toggleTheme}
+      className="relative w-full h-10 rounded-full flex items-center cursor-pointer transition-colors duration-300"
+      style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {/* Sliding thumb */}
+      <div
+        className="absolute top-0.5 w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ease-out"
+        style={{
+          backgroundColor: theme === 'dark' ? '#1a2622' : '#FFFFFF',
+          left: theme === 'dark' ? 'calc(100% - 38px)' : '4px',
+          boxShadow: theme === 'dark'
+            ? '0 2px 8px rgba(0,0,0,0.4)'
+            : '0 2px 8px rgba(0,0,0,0.2)',
+        }}
       >
-        <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
-        {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-      </button>
-
-      <div className="flex items-center gap-2 px-3 pt-2 pb-1 mt-1 border-t" style={{ borderColor: 'var(--border)' }}>
-        <span
-          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-          style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
-        >
-          {user?.name?.[0]?.toUpperCase() || 'U'}
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs truncate" style={{ color: 'var(--text-nav-active)' }}>{user?.name}</p>
-          <p className="text-[10px] capitalize" style={{ color: 'var(--text-nav-inactive)' }}>{user?.role}</p>
-        </div>
+        <span className="text-[15px]">{theme === 'dark' ? '🌙' : '☀️'}</span>
       </div>
 
-      <button
-        onClick={() => {
-          onNavigate?.();
-          handleLogout();
+      {/* Text label — always light because sidebar is always dark */}
+      <span 
+        className="absolute text-[12px] font-medium tracking-wide transition-all duration-300 select-none"
+        style={{
+          color: 'rgba(255,255,255,0.9)',
+          left: theme === 'dark' ? '14px' : 'auto',
+          right: theme === 'dark' ? 'auto' : '14px',
         }}
-        className="text-xs w-full text-left px-3 py-1.5 rounded-md transition-colors duration-150"
-        style={{ color: 'var(--text-nav-inactive)' }}
       >
-        Log out
-      </button>
+        {theme === 'dark' ? 'Dark' : 'Light'}
+      </span>
+    </button>
+
+    {/* USER SECTION */}
+    <div className="flex items-center gap-2.5 px-3 pt-3 pb-1 mt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+      <span
+        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+        style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
+      >
+        {user?.name?.[0]?.toUpperCase() || 'U'}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[13px] truncate font-medium" style={{ color: 'var(--text-nav-active)' }}>{user?.name}</p>
+        <p className="text-[11px] capitalize" style={{ color: 'var(--text-nav-inactive)' }}>{user?.role}</p>
+      </div>
     </div>
-  );
+
+    <button
+      onClick={() => {
+        onNavigate?.();
+        handleLogout();
+      }}
+      className="text-[13px] w-full text-left px-3 py-2 rounded-md transition-colors duration-150 mt-0.5 hover:opacity-80"
+      style={{ color: 'var(--text-nav-inactive)' }}
+    >
+      Log out
+    </button>
+  </div>
+);
 
   return (
     <>
       {/* DESKTOP: fixed left sidebar */}
       <aside
-        className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[190px] py-6 px-3 z-40"
+        className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[240px] py-6 px-3 z-40"
         style={{ ...tokens, backgroundColor: 'var(--bg-sidebar)' }}
       >
-        <div className="flex items-center gap-2 px-2 mb-8">
+        <div className="flex items-center gap-2.5 px-2 mb-8">
           <span
-            className="w-7 h-7 rounded-[7px] flex items-center justify-center text-sm"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
             style={{ backgroundColor: 'var(--accent-primary)' }}
           >
             🛣️
           </span>
-          <span className="font-semibold text-sm" style={{ color: 'var(--text-nav-active)' }}>
+          <span className="font-semibold text-[15px]" style={{ color: 'var(--text-nav-active)' }}>
             RoutePulse
           </span>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-0.5">
           <NavList />
         </nav>
 
@@ -198,7 +224,7 @@ export default function Navbar() {
       >
         <div className="flex items-center gap-2">
           <span
-            className="w-6 h-6 rounded-[7px] flex items-center justify-center text-xs"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs"
             style={{ backgroundColor: 'var(--accent-primary)' }}
           >
             🛣️
@@ -257,7 +283,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between px-2 mb-8">
           <div className="flex items-center gap-2">
             <span
-              className="w-7 h-7 rounded-[7px] flex items-center justify-center text-sm"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
               style={{ backgroundColor: 'var(--accent-primary)' }}
             >
               🛣️
@@ -271,14 +297,14 @@ export default function Navbar() {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto">
           <NavList onItemClick={() => setIsDrawerOpen(false)} />
         </nav>
 
         <ThemeToggleAndUser onNavigate={() => setIsDrawerOpen(false)} />
       </div>
 
-      {/* MOBILE ONLY: bottom tab bar, 4 primary items */}
+      {/* MOBILE ONLY: bottom tab bar */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 flex items-center justify-around py-2 z-40"
         style={{ ...tokens, backgroundColor: 'var(--bg-sidebar)', borderTop: '1px solid var(--border)' }}

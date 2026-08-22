@@ -2,9 +2,33 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import apiClient from '../lib/apiClient';
-import { SkeletonCard, Skeleton } from '../components/ui/Skeleton';
 import { useRoutePlayback } from '../features/history/hooks/useRoutePlayback';
 import PlaybackControls from '../features/history/components/PlaybackControls';
+import { useTheme } from '../app/ThemeContext';
+
+const lightTokens = {
+  '--bg-page': '#F4EFE6',
+  '--bg-surface': '#FFFFFF',
+  '--bg-sidebar': '#173B32',
+  '--border': '#E1D9C8',
+  '--text-primary': '#173B32',
+  '--text-secondary': '#5B6B5F',
+  '--text-muted': '#9C8F73',
+  '--accent-primary': '#5E8C61',
+  '--accent-eta': '#D59A3A',
+};
+
+const darkTokens = {
+  '--bg-page': '#12181A',
+  '--bg-surface': '#182220',
+  '--bg-sidebar': '#0E1F1B',
+  '--border': '#263531',
+  '--text-primary': '#F1EEE4',
+  '--text-secondary': '#8A9690',
+  '--text-muted': '#6E7C73',
+  '--accent-primary': '#79B37C',
+  '--accent-eta': '#E3B15E',
+};
 
 function haversineDistance([lat1, lon1], [lat2, lon2]) {
   const R = 6371;
@@ -19,6 +43,9 @@ function haversineDistance([lat1, lon1], [lat2, lon2]) {
 }
 
 export default function DeviceHistoryPage() {
+  const { theme } = useTheme();
+  const tokens = theme === 'dark' ? darkTokens : lightTokens;
+
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState('');
   const [pings, setPings] = useState([]);
@@ -51,113 +78,149 @@ export default function DeviceHistoryPage() {
 
   const durationMinutes =
     pings.length > 1
-      ? Math.round(
-          (new Date(pings[pings.length - 1].createdAt) - new Date(pings[0].createdAt)) / 60000
-        )
+      ? Math.round((new Date(pings[pings.length - 1].createdAt) - new Date(pings[0].createdAt)) / 60000)
       : 0;
 
   const playbackPosition = playback.currentPing
     ? [playback.currentPing.latitude, playback.currentPing.longitude]
     : null;
 
+  const selectedDeviceMeta = devices.find((d) => d._id === selectedDevice);
+
+  const tileUrl =
+    theme === 'dark'
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
   return (
-    <div className="h-screen flex flex-col p-4 gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-2">
-        <h1 className="text-2xl font-semibold">Device History</h1>
-        <label htmlFor="device-select" className="sr-only">
-          Select device
-        </label>
-        <select
-          id="device-select"
-          value={selectedDevice}
-          onChange={(e) => setSelectedDevice(e.target.value)}
-          className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-        >
-          {devices.length === 0 && <option value="">No devices yet</option>}
-          {devices.map((d) => (
-            <option key={d._id} value={d._id}>
-              Device {d._id.slice(0, 6)} — last seen{' '}
-              {new Date(d.lastSeen).toLocaleString()}
-            </option>
-          ))}
-        </select>
-      </div>
+<div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto space-y-4">
+        {/* 1. Header row */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Device history
+            </h1>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              {selectedDeviceMeta
+                ? `Device ${selectedDeviceMeta._id.slice(0, 6)} — last seen ${new Date(selectedDeviceMeta.lastSeen).toLocaleTimeString()}`
+                : 'No device selected'}
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2">
-        {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
-        ) : (
-          <>
-            <div className="glass rounded-2xl shadow-soft p-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Points recorded</p>
-              <p className="text-xl font-semibold">{pings.length}</p>
-            </div>
-            <div className="glass rounded-2xl shadow-soft p-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Distance travelled</p>
-              <p className="text-xl font-semibold">{totalDistanceKm.toFixed(2)} km</p>
-            </div>
-            <div className="glass rounded-2xl shadow-soft p-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Duration</p>
-              <p className="text-xl font-semibold">{durationMinutes} min</p>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="px-2">
-        {!isLoading && <PlaybackControls playback={playback} totalPoints={pings.length} />}
-      </div>
-
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4 px-2 pb-2">
-        <div className="md:col-span-2 rounded-2xl overflow-hidden shadow-soft">
-          {isLoading ? (
-            <Skeleton className="w-full h-full rounded-none" />
-          ) : path.length === 0 ? (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              No location history for this device yet.
-            </div>
-          ) : (
-            <MapContainer center={path[path.length - 1]} zoom={15} style={{ width: '100%', height: '100%' }}>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution="&copy; OpenStreetMap contributors"
-              />
-              <Polyline positions={path} pathOptions={{ color: '#2563EB', weight: 4 }} />
-
-              {/* Playback marker follows the scrubber/play position */}
-              {playbackPosition && (
-                <Marker position={playbackPosition}>
-                  <Popup>
-                    {new Date(playback.currentPing.createdAt).toLocaleTimeString()}
-                  </Popup>
-                </Marker>
-              )}
-            </MapContainer>
-          )}
+          <div className="relative">
+            <label htmlFor="device-select" className="sr-only">Select device</label>
+            <select
+              id="device-select"
+              value={selectedDevice}
+              onChange={(e) => setSelectedDevice(e.target.value)}
+              className="appearance-none rounded-xl pl-4 pr-9 py-2.5 text-sm focus:outline-none"
+              style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              {devices.length === 0 && <option value="">No devices yet</option>}
+              {devices.map((d) => (
+                <option key={d._id} value={d._id}>
+                  Device {d._id.slice(0, 6)} — last seen {new Date(d.lastSeen).toLocaleTimeString()}
+                </option>
+              ))}
+            </select>
+            <span
+              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              ▾
+            </span>
+          </div>
         </div>
 
-        <div className="glass rounded-2xl shadow-soft overflow-y-auto p-3">
-          <h2 className="text-sm font-semibold mb-2 px-1">Timeline</h2>
-          <ul className="space-y-1">
-            {pings
-              .slice()
-              .reverse()
-              .map((p) => (
-                <li
-                  key={p._id}
-                  className="text-xs px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+        {/* 2. Stat strip */}
+        <div
+          className="rounded-xl px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2"
+          style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        >
+          <div>
+            <p className="text-[10.5px] flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+              <span style={{ color: 'var(--accent-primary)' }}>🛣️</span> Points recorded
+            </p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{pings.length}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+              <span style={{ color: 'var(--accent-eta)' }}>📍</span> Distance travelled
+            </p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{totalDistanceKm.toFixed(2)} km</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+              <span style={{ color: 'var(--accent-primary)' }}>🕒</span> Duration
+            </p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{durationMinutes} min</p>
+          </div>
+        </div>
+
+        {/* 3. Playback control bar */}
+        {!isLoading && (
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <PlaybackControls playback={playback} totalPoints={pings.length} tokens={tokens} />
+          </div>
+        )}
+
+        {/* 4. Map + Timeline */}
+        <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4">
+          <div
+            className="relative rounded-xl overflow-hidden"
+            style={{ height: '320px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
+          >
+            {isLoading ? (
+              <div className="w-full h-full animate-pulse" style={{ backgroundColor: 'var(--border)' }} />
+            ) : path.length === 0 ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                <span style={{ fontSize: '22px' }}>🗺️</span>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No location history for this device yet.</p>
+              </div>
+            ) : (
+              <>
+                <MapContainer center={path[path.length - 1]} zoom={15} style={{ width: '100%', height: '100%' }}>
+                  <TileLayer url={tileUrl} />
+                  <Polyline positions={path} pathOptions={{ color: tokens['--accent-primary'], weight: 4 }} />
+                  {playbackPosition && (
+                    <Marker position={playbackPosition}>
+                      <Popup>{new Date(playback.currentPing.createdAt).toLocaleTimeString()}</Popup>
+                    </Marker>
+                  )}
+                </MapContainer>
+
+                <div
+                  className="absolute top-2 left-2 px-3 py-1.5 rounded-[9px] text-[11px] font-medium"
+                  style={{ backgroundColor: 'rgba(23,59,50,0.88)', color: '#FFFFFF' }}
                 >
-                  <span className="font-medium">
-                    {new Date(p.createdAt).toLocaleTimeString()}
-                  </span>{' '}
-                  — {p.latitude.toFixed(5)}, {p.longitude.toFixed(5)}
-                </li>
-              ))}
-          </ul>
+                  Route playback — Point {playback.currentIndex + 1}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-xl p-3 overflow-y-auto" style={{ height: '320px', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <p className="text-[12.5px] font-semibold px-1 mb-1" style={{ color: 'var(--text-primary)' }}>Timeline</p>
+            {pings.length === 0 ? (
+              <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>No points yet.</p>
+            ) : (
+              <div>
+                {pings.slice().reverse().map((p, i, arr) => (
+                  <div
+                    key={p._id}
+                    className="px-1 py-[7px] text-xs"
+                    style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none', opacity: i < arr.length - 1 ? 1 : 1 }}
+                  >
+                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {new Date(p.createdAt).toLocaleTimeString()}
+                    </span>
+                    <span style={{ color: 'var(--text-muted)' }}> — {p.latitude.toFixed(5)}, {p.longitude.toFixed(5)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -14,6 +14,18 @@ const IconArrowLeft = ({ size = 16 }) => (
   </svg>
 );
 
+const IconShield = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
+
+const IconChevronRight = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
 const IconUser = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
@@ -118,6 +130,30 @@ function Section({ title, description, children, icon: Icon }) {
         </div>
       </div>
       <div className="space-y-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ icon: Icon, title, description, children, borderColor }) {
+  return (
+    <div
+      className="rounded-2xl p-6 sm:p-8 space-y-5"
+      style={{
+        backgroundColor: 'var(--bg-surface)',
+        border: `1px solid ${borderColor || 'var(--border)'}`,
+        boxShadow: cardShadow,
+      }}
+    >
+      <div className="flex items-center gap-2.5">
+        {Icon && <Icon size={16} style={{ color: 'var(--text-muted)' }} />}
+        <div>
+          <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+          {description && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{description}</p>}
+        </div>
+      </div>
+      <div style={{ borderTop: '1px solid var(--border)' }} className="pt-5">
         {children}
       </div>
     </div>
@@ -315,6 +351,48 @@ export default function ProfilePage() {
             </div>
           </form>
         </Section>
+
+        {/* Data & Privacy */}
+<SectionCard 
+  icon={IconShield} 
+  title="Data & Privacy" 
+  description="Control your personal information."
+>
+  <div className="space-y-1">
+    <button
+      onClick={() => navigate('/privacy')}
+      className="w-full flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-black/[0.03] group text-left"
+    >
+      <div>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Privacy Policy</p>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Learn how we protect your data</p>
+      </div>
+      <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} className="group-hover:translate-x-0.5 transition-transform" />
+    </button>
+
+    <button
+      onClick={() => navigate('/terms')}
+      className="w-full flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-black/[0.03] group text-left"
+    >
+      <div>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Terms of Service</p>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Rules for using your account</p>
+      </div>
+      <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} className="group-hover:translate-x-0.5 transition-transform" />
+    </button>
+
+    <button
+      onClick={() => navigate('/contact')}
+      className="w-full flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-black/[0.03] group text-left"
+    >
+      <div>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Request Data Export</p>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Email us for a copy of your data</p>
+      </div>
+      <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} className="group-hover:translate-x-0.5 transition-transform" />
+    </button>
+  </div>
+</SectionCard>
 
         {/* Danger */}
         <div className="rounded-2xl p-6 sm:p-8 space-y-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--accent-critical)', opacity: 0.92 }}>

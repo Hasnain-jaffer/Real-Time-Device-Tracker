@@ -14,6 +14,12 @@ const IconSun = ({ size = 20 }) => (
   </svg>
 );
 
+const IconHelp = ({ size = 20, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
 const IconMoon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -389,11 +395,47 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        {/* Support & Legal */}
+<SectionCard 
+  icon={IconHelp} 
+  title="Support & Legal" 
+  description="Get help and read our policies."
+>
+  <div className="space-y-1">
+    {[
+      { to: '/help', label: 'Help Center', desc: 'FAQs and how-to guides' },
+      { to: '/contact', label: 'Contact Us', desc: 'Reach our support team' },
+      { to: '/privacy', label: 'Privacy Policy', desc: 'How we handle your data' },
+      { to: '/terms', label: 'Terms & Conditions', desc: 'Rules for using RoutePulse' },
+    ].map((link) => (
+      <button
+        key={link.to}
+        onClick={() => navigate(link.to)}
+        className="w-full flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-black/[0.03] group text-left"
+      >
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{link.label}</p>
+          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{link.desc}</p>
+        </div>
+        <IconChevronRight 
+          size={16} 
+          style={{ color: 'var(--text-muted)' }} 
+          className="group-hover:translate-x-0.5 transition-transform" 
+        />
+      </button>
+    ))}
+  </div>
+</SectionCard>
 
         {/* Footer */}
-        <p className="text-center text-[11px] pb-4" style={{ color: 'var(--text-muted)' }}>
-          RoutePulse v1.0 · Built with care
-        </p>
+       <div className="text-center space-y-1 pb-4">
+  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+    RoutePulse v1.0 · <button onClick={() => navigate('/about')} className="hover:underline" style={{ color: 'var(--accent-primary)' }}>About</button> · <button onClick={() => navigate('/help')} className="hover:underline" style={{ color: 'var(--accent-primary)' }}>Help</button>
+  </p>
+  <p className="text-[10px]" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>
+    Your data is encrypted and never shared with third parties.
+  </p>
+</div>
       </div>
     </div>
   );

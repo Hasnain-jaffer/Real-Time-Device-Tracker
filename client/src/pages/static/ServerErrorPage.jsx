@@ -25,8 +25,17 @@ const darkTokens = {
   '--accent-primary': '#79B37C',
 };
 
+function useSafeTheme() {
+  try {
+    const { theme } = useTheme();
+    return theme;
+  } catch {
+    return 'light';
+  }
+}
+
 export default function ServerErrorPage() {
-  const { theme } = useTheme();
+  const theme = useSafeTheme();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
 
   return (

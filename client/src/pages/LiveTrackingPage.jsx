@@ -1,56 +1,122 @@
 // client/src/pages/LiveTrackingPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
 import { useTheme } from '../app/ThemeContext';
 import { useSocket } from '../app/SocketProvider';
+import { useUserLocation } from '../features/tracking/hooks/useUserLocation';
 import MapSizeFix from '../components/map/MapSizeFix';
+import TrackingPanel from '../features/tracking/components/TrackingPanel';
+import DistanceEtaCard from '../features/tracking/components/DistanceEtaCard';
 
+/* ─── SVG Icons ─── */
+const IconSearch = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const IconMapEmpty = ({ size = 32, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+    <line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" />
+  </svg>
+);
+
+const IconMapPin = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const IconCrosshair = ({ size = 14, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" />
+  </svg>
+);
+
+const IconHistory = ({ size = 14, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+  </svg>
+);
+
+const IconBus = ({ size = 18, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="6" width="18" height="12" rx="2" /><path d="M6 18v2" /><path d="M18 18v2" /><path d="M6 10h12" />
+  </svg>
+);
+
+const IconNavigation = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+  </svg>
+);
+
+const IconSignal = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M2 20h.01" /><path d="M7 20v-4" /><path d="M12 20v-8" /><path d="M17 20V8" /><path d="M22 4v16" />
+  </svg>
+);
+
+const IconStops = ({ size = 14, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+/* ─── Tokens ─── */
 const lightTokens = {
   '--bg-page': '#F4EFE6',
   '--bg-surface': '#FFFFFF',
-  '--bg-sidebar': '#173B32',
   '--border': '#E1D9C8',
   '--text-primary': '#173B32',
   '--text-secondary': '#5B6B5F',
   '--text-muted': '#9C8F73',
   '--accent-primary': '#5E8C61',
   '--accent-eta': '#D59A3A',
-  '--badge-eta-bg': '#F6E9CE',
-  '--badge-eta-text': '#8A6423',
+  '--badge-success-bg': '#EAF3DE',
+  '--badge-success-text': '#3B6D26',
 };
 
 const darkTokens = {
   '--bg-page': '#12181A',
   '--bg-surface': '#182220',
-  '--bg-sidebar': '#0E1F1B',
   '--border': '#263531',
   '--text-primary': '#F1EEE4',
   '--text-secondary': '#8A9690',
   '--text-muted': '#6E7C73',
   '--accent-primary': '#79B37C',
   '--accent-eta': '#E3B15E',
-  '--badge-eta-bg': 'rgba(213,154,58,0.15)',
-  '--badge-eta-text': '#E3B15E',
+  '--badge-success-bg': 'rgba(94,140,97,0.15)',
+  '--badge-success-text': '#79B37C',
 };
+
+const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
+
+/* ─── Bus Icon (Leaflet) ─── */
+function getBusIcon(color = '#5E8C61') {
+  return L.divIcon({
+    className: 'custom-bus-marker',
+    html: `
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+        <rect x="3" y="6" width="18" height="12" rx="2" />
+        <path d="M6 18v2" /><path d="M18 18v2" /><path d="M6 10h12" />
+      </svg>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+}
 
 function RecenterControl({ position }) {
   const map = useMap();
 
-  function recenter() {
-    if (position) map.setView(position, map.getZoom());
-  }
-  RecenterControl.recenter = recenter;
-
-  // Automatically follow the selected device whenever its position changes
-  // (e.g. switching which bus is selected, or that bus sending a new ping) --
-  // MapContainer's `center` prop only applies on initial mount, so without
-  // this the map silently stays wherever it was first pointed.
   useEffect(() => {
     if (position) map.setView(position, map.getZoom());
-  }, [position]);
+  }, [position, map]);
 
   return null;
 }
@@ -60,21 +126,22 @@ export default function LiveTrackingPage() {
   const { theme } = useTheme();
   const { socket } = useSocket();
   const navigate = useNavigate();
+  const { position: userPosition } = useUserLocation();
+
   const [selectedKey, setSelectedKey] = useState(null);
+  const [hiddenIds, setHiddenIds] = useState(new Set());
   const [query, setQuery] = useState('');
 
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
-  const tileUrl =
-    theme === 'dark'
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const isDark = theme === 'dark';
 
-  // Restore the browser's own live-location broadcast — this makes the
-  // current user's device appear on the map even when no separate
-  // Tracker Agent is actively running, exactly like the original LiveMap.jsx.
+  const tileUrl = isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
   useEffect(() => {
     let watchId;
-    if (navigator.geolocation) {
+    if (navigator.geolocation && socket) {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -95,170 +162,184 @@ export default function LiveTrackingPage() {
     trackedDevices[0] ||
     null;
 
-  const filteredList = query.trim()
-    ? trackedDevices.filter(
-        (d) => d.name.toLowerCase().includes(query.toLowerCase()) || d.identifier?.toLowerCase().includes(query.toLowerCase())
-      )
-    : trackedDevices;
+  const handleToggleVisibility = useCallback((key) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
-  const pulsingIcon = L.divIcon({
-    className: '',
-    html: `<div class="lt-pulse-marker" style="background:${tokens['--accent-primary']}"></div>`,
-    iconSize: [18, 18],
-  });
-
-  const position = selected ? [selected.latitude, selected.longitude] : null;
+  const mapCenter = selected
+    ? [selected.latitude, selected.longitude]
+    : [25.4610, 68.7183];
 
   return (
-    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
-      <style>{`
-        .lt-pulse-marker { width: 18px; height: 18px; border-radius: 50%; position: relative; }
-        .lt-pulse-marker::after {
-          content: ''; position: absolute; inset: -8px; border-radius: 50%;
-          background: inherit; opacity: 0.2; animation: ltPulse 1.5s ease-out infinite;
-        }
-        @keyframes ltPulse { 0% { transform: scale(0.6); opacity: 0.4; } 100% { transform: scale(2.5); opacity: 0; } }
-      `}</style>
+    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full h-full flex flex-col lg:flex-row overflow-hidden">
+      
+      {/* Sidebar */}
+      <div
+        className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-page)', borderRight: `1px solid var(--border)` }}
+      >
+        {/* Sidebar header */}
+        <div className="p-4 sm:p-5 space-y-1" style={{ borderBottom: '1px solid var(--border)' }}>
+          <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Live Tracking
+          </h1>
+          <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+            {trackedDevices.length} bus{trackedDevices.length !== 1 ? 'es' : ''} online
+          </p>
+        </div>
 
-      <div className="max-w-6xl mx-auto space-y-4">
-        {/* 1. Header row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Live tracking
-            </h1>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              {selected ? `${selected.name}${selected.identifier ? ` · ${selected.identifier}` : ''} — currently selected` : 'No bus selected'}
-            </p>
-          </div>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search bus or route"
-            className="w-full lg:w-64 rounded-xl px-4 py-2.5 text-sm focus:outline-none"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+        {/* Panel */}
+        <div className="flex-1 overflow-hidden p-3">
+          <TrackingPanel
+            devices={trackedDevices}
+            hiddenIds={hiddenIds}
+            onToggleVisibility={handleToggleVisibility}
+            onSelectDevice={setSelectedKey}
+            selectedKey={selectedKey}
+            tokens={tokens}
           />
         </div>
 
-        {/* 2. Map hero */}
-        <div
-          className="relative rounded-xl overflow-hidden"
-          style={{ height: '380px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
-        >
-          {position ? (
-            <>
-              <MapContainer center={position} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
-                <TileLayer url={tileUrl} />
-                <Marker position={position} icon={pulsingIcon} />
-                <RecenterControl position={position} />
-                <MapSizeFix />
-              </MapContainer>
+        {/* Distance / ETA */}
+        {userPosition && (
+          <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
+            <DistanceEtaCard
+              userPosition={userPosition}
+              device={selected}
+              tokens={tokens}
+            />
+          </div>
+        )}
+      </div>
 
-              <div
-                className="absolute top-2 left-2 px-3 py-2 rounded-[9px] text-xs"
-                style={{ backgroundColor: 'rgba(23,59,50,0.88)', color: '#FFFFFF' }}
-              >
-                <p className="font-medium flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--accent-primary)' }} />
-                  {selected.name}
-                </p>
-                <p className="opacity-80 mt-0.5">
-                  {selected.speedKmh != null ? `${selected.speedKmh.toFixed(0)} km/h` : '— km/h'} · ETA —
-                </p>
-              </div>
-
-              <div
-                className="absolute bottom-2 left-2 px-3 py-1.5 rounded-[9px] text-[10px]"
-                style={{ backgroundColor: 'rgba(23,59,50,0.88)', color: '#FFFFFF' }}
-              >
-                Updated {selected.updatedAt ? new Date(selected.updatedAt).toLocaleTimeString() : '—'}
-              </div>
-
-              <div className="absolute bottom-2 right-2 flex gap-2">
-                <button
-                  onClick={() => RecenterControl.recenter?.()}
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg"
-                  style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                >
-                  Recenter
-                </button>
-                <button
-                  onClick={() => navigate('/history')}
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg text-white"
-                  style={{ backgroundColor: 'var(--accent-primary)' }}
-                >
-                  View history
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-              <span style={{ fontSize: '24px' }}>🗺️</span>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No live position yet</p>
+      {/* Map Area */}
+      <div className="flex-1 relative min-h-[400px] lg:min-h-0">
+        {trackedDevices.length === 0 ? (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center p-6"
+            style={{ backgroundColor: 'var(--bg-page)' }}
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+            >
+              <IconMapEmpty size={32} style={{ color: 'var(--text-muted)' }} />
             </div>
-          )}
-        </div>
-
-        {/* 3. Two-column row */}
-        <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] gap-4">
-          {/* All buses */}
-          <div className="rounded-xl p-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <p className="text-xs font-medium px-3 py-2" style={{ color: 'var(--text-muted)' }}>All buses</p>
-            <div className="space-y-1">
-              {filteredList.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>No buses found.</p>
-              ) : (
-                filteredList.map((d) => {
-                  const isSelected = selected?.key === d.key;
-                  return (
-                    <button
-                      key={d.key}
-                      onClick={() => setSelectedKey(d.key)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors duration-150"
-                      style={{
-                        backgroundColor: isSelected ? 'rgba(94,140,97,0.12)' : 'transparent',
-                        borderLeft: isSelected ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                      }}
-                    >
-                      <span className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--accent-primary)' }} />
-                        {d.name} {d.identifier && <span style={{ color: 'var(--text-muted)' }}>· {d.identifier}</span>}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        {d.speedKmh != null ? `${d.speedKmh.toFixed(0)} km/h` : 'Live'}
-                      </span>
-                    </button>
-                  );
-                })
-              )}
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                No buses online
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                Waiting for devices to start broadcasting…
+              </p>
             </div>
           </div>
+        ) : (
+          <MapContainer
+            center={mapCenter}
+            zoom={14}
+            className="absolute inset-0 z-0"
+            attributionControl={false}
+          >
+            <TileLayer url={tileUrl} />
+            {trackedDevices.map((device) => {
+              if (hiddenIds.has(device.key)) return null;
+              return (
+                <Marker
+                  key={device.key}
+                  position={[device.latitude, device.longitude]}
+                  icon={getBusIcon(isDark ? '#79B37C' : '#5E8C61')}
+                />
+              );
+            })}
+            <RecenterControl position={selected ? [selected.latitude, selected.longitude] : null} />
+            <MapSizeFix />
+          </MapContainer>
+        )}
 
-          {/* Selected bus details */}
-          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-muted)' }}>Selected bus details</p>
-            {selected ? (
-              <div className="space-y-2.5 text-sm">
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-secondary)' }}>Status</span>
-                  <span style={{ color: 'var(--accent-primary)', fontWeight: 500 }}>On time</span>
+        {/* Map overlays */}
+        {trackedDevices.length > 0 && selected && (
+          <>
+            {/* Top-right: Selected bus info */}
+            <div
+              className="absolute top-4 right-4 z-[400] rounded-xl px-4 py-3 min-w-[200px] max-w-[260px]"
+              style={{
+                backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
+                backdropFilter: 'blur(12px)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+              }}
+            >
+              <div className="flex items-center gap-2.5 mb-2">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: 'var(--accent-primary)' + '20', color: 'var(--accent-primary)' }}
+                >
+                  <IconBus size={16} />
                 </div>
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-secondary)' }}>Speed</span>
-                  <span style={{ color: 'var(--text-primary)' }}>
-                    {selected.speedKmh != null ? `${selected.speedKmh.toFixed(0)} km/h` : '—'}
+                <div className="min-w-0">
+                  <p className="text-sm font-bold truncate" style={{ color: isDark ? '#F1EEE4' : '#173B32' }}>
+                    {selected.name}
+                  </p>
+                  {selected.identifier && (
+                    <p className="text-[11px] truncate" style={{ color: isDark ? '#6E7C73' : '#9C8F73' }}>
+                      {selected.identifier}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs" style={{ color: isDark ? '#8A9690' : '#5B6B5F' }}>
+                  <IconSignal size={12} style={{ color: isDark ? '#6E7C73' : '#9C8F73' }} />
+                  <span>{selected.speedKmh != null ? `${selected.speedKmh.toFixed(0)} km/h` : 'Speed unavailable'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: isDark ? '#8A9690' : '#5B6B5F' }}>
+                  <IconCrosshair size={12} style={{ color: isDark ? '#6E7C73' : '#9C8F73' }} />
+                  <span className="font-mono text-[11px]">
+                    {selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-secondary)' }}>Next stop</span>
-                  <span style={{ color: 'var(--text-primary)' }}>—</span>
-                </div>
               </div>
-            ) : (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Select a bus to see details.</p>
-            )}
-          </div>
-        </div>
+            </div>
+
+            {/* Bottom-left: Action chips */}
+            <div className="absolute bottom-4 left-4 z-[400] flex items-center gap-2">
+              <button
+                onClick={() => selected?._id && navigate(`/devices/${selected._id}/history`)}
+                className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition hover:opacity-90 active:scale-95"
+                style={{
+                  backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
+                  color: isDark ? '#F1EEE4' : '#173B32',
+                  backdropFilter: 'blur(12px)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                }}
+              >
+                <IconHistory size={13} />
+                History
+              </button>
+              <button
+                onClick={() => selected?._id && navigate(`/devices/${selected._id}/stops`)}
+                className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition hover:opacity-90 active:scale-95"
+                style={{
+                  backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
+                  color: isDark ? '#F1EEE4' : '#173B32',
+                  backdropFilter: 'blur(12px)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                }}
+              >
+                <IconStops size={13} />
+                Stops
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

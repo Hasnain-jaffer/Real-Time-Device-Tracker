@@ -3,6 +3,31 @@ import { useState, useEffect } from 'react';
 
 const TYPE_OPTIONS = ['stop', 'home', 'office', 'custom'];
 
+/* ─── SVG Icons ─── */
+const IconMapPin = ({ size = 20, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const IconLocate = ({ size = 14, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+const IconPlus = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const IconCheck = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
 export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialValues, tokens = {} }) {
   const [name, setName] = useState('');
   const [type, setType] = useState('stop');
@@ -63,59 +88,75 @@ export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialVa
 
   return (
     <div
-      className="fixed inset-0 z-[3000] flex items-center justify-center px-4 animate-fade-in"
-      style={{ backgroundColor: 'rgba(23,59,50,0.55)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 z-[3000] flex items-center justify-center px-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       role="dialog"
       aria-modal="true"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ backgroundColor: surface, border: `1px solid ${border}`, boxShadow: '0 20px 40px rgba(23,59,50,0.18)' }}
+        style={{ backgroundColor: surface, border: `1px solid ${border}`, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' }}
       >
+        {/* Header */}
         <div className="px-6 pt-6 pb-5" style={{ borderBottom: `1px solid ${border}` }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ backgroundColor: accent + '1A' }}>
-              📍
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: accent + '18', color: accent }}
+            >
+              <IconMapPin size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold" style={{ color: textPrimary }}>
+              <h2 className="text-base font-bold" style={{ color: textPrimary }}>
                 {initialValues ? 'Edit stop' : 'Add bus stop'}
               </h2>
-              <p className="text-xs" style={{ color: textMuted }}>
+              <p className="text-xs mt-0.5" style={{ color: textMuted }}>
                 Get notified when a bus arrives or leaves.
               </p>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: textSecondary }}>Stop name</label>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+          {/* Stop name */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: textSecondary }}>
+              Stop name
+            </label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Main Gate Stop"
-              className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none transition"
-              style={{ backgroundColor: page, border: `1px solid ${border}`, color: textPrimary }}
+              className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-[1.5px] transition-all"
+              style={{
+                backgroundColor: page,
+                border: `1px solid ${border}`,
+                color: textPrimary,
+                '--tw-ring-color': accent,
+              }}
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: textSecondary }}>Type</label>
-            <div className="flex gap-2 flex-wrap">
+          {/* Type */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: textSecondary }}>
+              Type
+            </label>
+            <div className="flex p-1 rounded-xl w-fit" style={{ backgroundColor: page, border: `1px solid ${border}` }}>
               {TYPE_OPTIONS.map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setType(option)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition"
-                  style={
-                    type === option
-                      ? { backgroundColor: accent, color: '#fff', border: `1px solid ${accent}` }
-                      : { border: `1px solid ${border}`, color: textSecondary }
-                  }
+                  className="px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all"
+                  style={{
+                    backgroundColor: type === option ? surface : 'transparent',
+                    color: type === option ? textPrimary : textMuted,
+                    boxShadow: type === option ? '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)' : 'none',
+                  }}
                 >
                   {option}
                 </button>
@@ -123,46 +164,69 @@ export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialVa
             </div>
           </div>
 
+          {/* Coordinates */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: textSecondary }}>Latitude</label>
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: textSecondary }}>
+                Latitude
+              </label>
               <input
                 required
                 type="number"
                 step="any"
                 value={latitude}
                 onChange={(e) => setLatitude(e.target.value)}
-                className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none"
-                style={{ backgroundColor: page, border: `1px solid ${border}`, color: textPrimary }}
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-[1.5px] transition-all"
+                style={{
+                  backgroundColor: page,
+                  border: `1px solid ${border}`,
+                  color: textPrimary,
+                  '--tw-ring-color': accent,
+                }}
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: textSecondary }}>Longitude</label>
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: textSecondary }}>
+                Longitude
+              </label>
               <input
                 required
                 type="number"
                 step="any"
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
-                className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none"
-                style={{ backgroundColor: page, border: `1px solid ${border}`, color: textPrimary }}
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-[1.5px] transition-all"
+                style={{
+                  backgroundColor: page,
+                  border: `1px solid ${border}`,
+                  color: textPrimary,
+                  '--tw-ring-color': accent,
+                }}
               />
             </div>
           </div>
 
+          {/* Use my location */}
           <button
             type="button"
             onClick={useMyLocation}
-            className="text-xs hover:underline"
+            className="flex items-center gap-1.5 text-xs font-medium hover:opacity-80 transition-opacity"
             style={{ color: accent }}
           >
+            <IconLocate size={14} />
             Use my current location
           </button>
 
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: textSecondary }}>
-              Radius: {radiusMeters}m
-            </label>
+          {/* Radius */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: textSecondary }}>
+                Radius
+              </label>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{ backgroundColor: page, color: textPrimary }}>
+                {radiusMeters}m
+              </span>
+            </div>
             <input
               type="range"
               min="50"
@@ -170,25 +234,34 @@ export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialVa
               step="10"
               value={radiusMeters}
               onChange={(e) => setRadiusMeters(e.target.value)}
-              className="w-full"
-              style={{ accentColor: accent }}
+              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, ${accent} 0%, ${accent} ${((radiusMeters - 50) / 950) * 100}%, ${border} ${((radiusMeters - 50) / 950) * 100}%, ${border} 100%)`,
+                accentColor: accent,
+              }}
             />
+            <div className="flex justify-between text-[10px]" style={{ color: textMuted }}>
+              <span>50m</span>
+              <span>1000m</span>
+            </div>
           </div>
 
+          {/* Error */}
           {error && (
-            <p
-              className="text-sm rounded-lg px-3 py-2"
+            <div
+              className="rounded-xl px-4 py-3 text-xs font-medium"
               style={{ color: critical, backgroundColor: critical + '0D', border: `1px solid ${critical}33` }}
             >
               {error}
-            </p>
+            </div>
           )}
 
-          <div className="flex gap-2 justify-end pt-2">
+          {/* Footer */}
+          <div className="flex items-center gap-2 justify-end pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl px-4 py-2 text-sm font-medium transition"
+              className="rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-80"
               style={{ color: textSecondary }}
             >
               Cancel
@@ -196,10 +269,22 @@ export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialVa
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: accent }}
             >
-              {isSubmitting ? 'Saving…' : initialValues ? 'Save changes' : 'Add stop'}
+              {isSubmitting ? (
+                'Saving…'
+              ) : initialValues ? (
+                <>
+                  <IconCheck size={14} />
+                  Save changes
+                </>
+              ) : (
+                <>
+                  <IconPlus size={14} />
+                  Add stop
+                </>
+              )}
             </button>
           </div>
         </form>

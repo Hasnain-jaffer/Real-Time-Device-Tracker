@@ -1,11 +1,12 @@
 // client/src/pages/LiveTrackingPage.jsx
-import { useState, useEffect } from 'react';import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
 import { useTheme } from '../app/ThemeContext';
+import { useSocket } from '../app/SocketProvider';
 import MapSizeFix from '../components/map/MapSizeFix';
-
 
 const lightTokens = {
   '--bg-page': '#F4EFE6',
@@ -37,16 +38,27 @@ const darkTokens = {
 
 function RecenterControl({ position }) {
   const map = useMap();
+
   function recenter() {
     if (position) map.setView(position, map.getZoom());
   }
   RecenterControl.recenter = recenter;
+
+  // Automatically follow the selected device whenever its position changes
+  // (e.g. switching which bus is selected, or that bus sending a new ping) --
+  // MapContainer's `center` prop only applies on initial mount, so without
+  // this the map silently stays wherever it was first pointed.
+  useEffect(() => {
+    if (position) map.setView(position, map.getZoom());
+  }, [position]);
+
   return null;
 }
 
 export default function LiveTrackingPage() {
   const { trackedDevices } = useTrackedDevices();
   const { theme } = useTheme();
+  const { socket } = useSocket();
   const navigate = useNavigate();
   const [selectedKey, setSelectedKey] = useState(null);
   const [query, setQuery] = useState('');
@@ -56,6 +68,26 @@ export default function LiveTrackingPage() {
     theme === 'dark'
       ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
       : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+  // Restore the browser's own live-location broadcast — this makes the
+  // current user's device appear on the map even when no separate
+  // Tracker Agent is actively running, exactly like the original LiveMap.jsx.
+  useEffect(() => {
+    let watchId;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          socket.emit('send-location', { latitude, longitude });
+        },
+        (error) => console.error('[geolocation]', error),
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    }
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [socket]);
 
   const selected =
     trackedDevices.find((d) => d.key === selectedKey) ||
@@ -78,7 +110,8 @@ export default function LiveTrackingPage() {
   const position = selected ? [selected.latitude, selected.longitude] : null;
 
   return (
-<div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">        <style>{`
+    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+      <style>{`
         .lt-pulse-marker { width: 18px; height: 18px; border-radius: 50%; position: relative; }
         .lt-pulse-marker::after {
           content: ''; position: absolute; inset: -8px; border-radius: 50%;
@@ -177,7 +210,6 @@ export default function LiveTrackingPage() {
               ) : (
                 filteredList.map((d) => {
                   const isSelected = selected?.key === d.key;
-                  const isOnline = !!d.isRegistered || d.speedKmh != null || true; // presence in trackedDevices implies currently reporting
                   return (
                     <button
                       key={d.key}

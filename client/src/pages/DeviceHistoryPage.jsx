@@ -5,6 +5,8 @@ import apiClient from '../lib/apiClient';
 import { useRoutePlayback } from '../features/history/hooks/useRoutePlayback';
 import PlaybackControls from '../features/history/components/PlaybackControls';
 import { useTheme } from '../app/ThemeContext';
+import MapSizeFix from '../components/map/MapSizeFix';
+
 
 const lightTokens = {
   '--bg-page': '#F4EFE6',
@@ -180,7 +182,7 @@ export default function DeviceHistoryPage() {
               </div>
             ) : (
               <>
-                <MapContainer center={path[path.length - 1]} zoom={15} style={{ width: '100%', height: '100%' }}>
+                                <MapContainer center={path[path.length - 1]} zoom={15} style={{ width: '100%', height: '100%' }}>
                   <TileLayer url={tileUrl} />
                   <Polyline positions={path} pathOptions={{ color: tokens['--accent-primary'], weight: 4 }} />
                   {playbackPosition && (
@@ -188,6 +190,7 @@ export default function DeviceHistoryPage() {
                       <Popup>{new Date(playback.currentPing.createdAt).toLocaleTimeString()}</Popup>
                     </Marker>
                   )}
+                  <MapSizeFix />
                 </MapContainer>
 
                 <div

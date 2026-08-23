@@ -4,6 +4,8 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
 import { useTheme } from '../app/ThemeContext';
+import MapSizeFix from '../components/map/MapSizeFix';
+
 
 const lightTokens = {
   '--bg-page': '#F4EFE6',
@@ -35,21 +37,13 @@ const darkTokens = {
 
 function RecenterControl({ position }) {
   const map = useMap();
-
-  useEffect(() => {
-    // Fix: force Leaflet to re-measure its container after mount/layout settles
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [map]);
-
   function recenter() {
     if (position) map.setView(position, map.getZoom());
   }
   RecenterControl.recenter = recenter;
   return null;
 }
+
 export default function LiveTrackingPage() {
   const { trackedDevices } = useTrackedDevices();
   const { theme } = useTheme();
@@ -124,6 +118,7 @@ export default function LiveTrackingPage() {
                 <TileLayer url={tileUrl} />
                 <Marker position={position} icon={pulsingIcon} />
                 <RecenterControl position={position} />
+                <MapSizeFix />
               </MapContainer>
 
               <div

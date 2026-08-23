@@ -7,6 +7,8 @@ import { useAuth } from '../app/AuthContext';
 import { useSocket } from '../app/SocketProvider';
 import { useTheme } from '../app/ThemeContext';
 import apiClient from '../lib/apiClient';
+import MapSizeFix from '../components/map/MapSizeFix';
+
 
 /* ─── Inline SVG Icons (no extra deps) ─── */
 const IconBus = ({ size = 18, className = '' }) => (
@@ -357,15 +359,11 @@ export default function DashboardPage() {
 >
   {focused?.lastLocation?.latitude ? (
     <>
-      <MapContainer
-        key={`map-${focused._id}`}  // forces clean remount per device
+            <MapContainer
+        key={`map-${focused._id}`}
         center={[focused.lastLocation.latitude, focused.lastLocation.longitude]}
         zoom={14}
         style={{ height: '100%', width: '100%' }}
-        whenCreated={(map) => {
-          // Leaflet must recalculate after React paint
-          requestAnimationFrame(() => map.invalidateSize());
-        }}
         dragging={false}
         zoomControl={false}
         scrollWheelZoom={false}
@@ -378,6 +376,7 @@ export default function DashboardPage() {
           position={[focused.lastLocation.latitude, focused.lastLocation.longitude]}
           icon={pulsingIcon}
         />
+        <MapSizeFix />
       </MapContainer>
 
       {/* Overlays */}

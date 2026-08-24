@@ -1,5 +1,6 @@
 // client/src/features/geofences/components/GeofenceFormModal.jsx
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../../app/ThemeContext';
 
 const TYPE_OPTIONS = ['stop', 'home', 'office', 'custom'];
 
@@ -28,7 +29,34 @@ const IconCheck = ({ size = 16, className = '', style = {} }) => (
   </svg>
 );
 
-export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialValues, tokens = {} }) {
+/* ─── Tokens ─── */
+const lightTokens = {
+  '--bg-surface': '#FFFFFF',
+  '--bg-page': '#F4EFE6',
+  '--border': '#E1D9C8',
+  '--text-primary': '#173B32',
+  '--text-secondary': '#5B6B5F',
+  '--text-muted': '#9C8F73',
+  '--accent-primary': '#5E8C61',
+  '--accent-critical': '#B94A3A',
+};
+
+const darkTokens = {
+  '--bg-surface': '#182220',
+  '--bg-page': '#12181A',
+  '--border': '#263531',
+  '--text-primary': '#F1EEE4',
+  '--text-secondary': '#8A9690',
+  '--text-muted': '#6E7C73',
+  '--accent-primary': '#79B37C',
+  '--accent-critical': '#C15D4C',
+};
+
+export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialValues, tokens: propTokens = {} }) {
+  const { theme } = useTheme();
+  const themeTokens = theme === 'dark' ? darkTokens : lightTokens;
+  const tokens = { ...themeTokens, ...propTokens };
+
   const [name, setName] = useState('');
   const [type, setType] = useState('stop');
   const [latitude, setLatitude] = useState('');
@@ -37,14 +65,14 @@ export default function GeofenceFormModal({ isOpen, onClose, onSubmit, initialVa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const surface = tokens['--bg-surface'] || '#FFFFFF';
-  const page = tokens['--bg-page'] || '#F4EFE6';
-  const border = tokens['--border'] || '#E1D9C8';
-  const textPrimary = tokens['--text-primary'] || '#173B32';
-  const textSecondary = tokens['--text-secondary'] || '#5B6B5F';
-  const textMuted = tokens['--text-muted'] || '#9C8F73';
-  const accent = tokens['--accent-primary'] || '#5E8C61';
-  const critical = tokens['--accent-critical'] || '#B94A3A';
+  const surface = tokens['--bg-surface'];
+  const page = tokens['--bg-page'];
+  const border = tokens['--border'];
+  const textPrimary = tokens['--text-primary'];
+  const textSecondary = tokens['--text-secondary'];
+  const textMuted = tokens['--text-muted'];
+  const accent = tokens['--accent-primary'];
+  const critical = tokens['--accent-critical'];
 
   useEffect(() => {
     if (isOpen) {

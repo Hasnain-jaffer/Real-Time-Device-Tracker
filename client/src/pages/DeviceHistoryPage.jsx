@@ -1,6 +1,7 @@
 // client/src/pages/DeviceHistoryPage.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet'; // ← added
 import apiClient from '../lib/apiClient';
 import { useRoutePlayback } from '../features/history/hooks/useRoutePlayback';
 import PlaybackControls from '../features/history/components/PlaybackControls';
@@ -76,6 +77,22 @@ const darkTokens = {
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 
+/* ─── Custom inline-SVG marker (no external assets) ─── */
+function createPlaybackMarker(color) {
+  return L.divIcon({
+    className: 'custom-playback-marker',
+    html: `
+      <svg width="28" height="36" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;color:${color}">
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20C24 5.373 18.627 0 12 0z" fill="currentColor"/>
+        <circle cx="12" cy="12" r="4" fill="white"/>
+      </svg>
+    `,
+    iconSize: [28, 36],
+    iconAnchor: [14, 36],
+    popupAnchor: [0, -36],
+  });
+}
+
 function haversineDistance([lat1, lon1], [lat2, lon2]) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -99,6 +116,12 @@ export default function DeviceHistoryPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const playback = useRoutePlayback(pings);
+
+  /* ─── themed marker icon ─── */
+  const playbackIcon = useMemo(
+    () => createPlaybackMarker(tokens['--accent-primary']),
+    [tokens]
+  );
 
   useEffect(() => {
     apiClient.get('/history/devices').then(({ data }) => {
@@ -267,7 +290,10 @@ export default function DeviceHistoryPage() {
                   <TileLayer url={tileUrl} />
                   <Polyline positions={path} pathOptions={{ color: tokens['--accent-primary'], weight: 4 }} />
                   {playbackPosition && (
-                    <Marker position={playbackPosition}>
+                    <Marker
+                      position={playbackPosition}
+                      icon={playbackIcon} // ← custom icon applied
+                    >
                       <Popup>{new Date(playback.currentPing.createdAt).toLocaleTimeString()}</Popup>
                     </Marker>
                   )}

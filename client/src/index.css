@@ -60,6 +60,11 @@ html.dark {
   }
 }
 
+.custom-playback-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 @layer components {
   .glass {
     @apply backdrop-blur-md;

@@ -27,6 +27,11 @@ export default function GeofenceLayer({ geofences }) {
             key={fence._id}
             center={[fence.latitude, fence.longitude]}
             radius={fence.radiusMeters}
+            eventHandlers={{
+              click: () => {
+                // Handle click event
+              },
+            }}
             pathOptions={{
               color: fence.color || fallback.stroke,
               fillColor: fence.color || fallback.fill,
@@ -34,9 +39,14 @@ export default function GeofenceLayer({ geofences }) {
               weight: 2,
             }}
           >
-            <Tooltip permanent direction="center" className="!bg-transparent !border-0 !shadow-none !text-xs !font-medium">
-              <span style={{ color: fallback.text }}>{fence.name}</span>
-            </Tooltip>
+            <Tooltip
+  permanent
+  direction="center"
+  interactive={false}
+  className="!bg-transparent !border-0 !shadow-none !text-xs !font-medium"
+>
+  <span style={{ color: fallback.text }}>{fence.name}</span>
+</Tooltip>
           </Circle>
         ))}
     </>

@@ -1,6 +1,6 @@
-// client/src/pages/ForgotPasswordPage.jsx
+// client/src/pages/ResetPasswordPage.jsx
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import { useTheme } from '../app/ThemeContext';
 
@@ -12,9 +12,15 @@ const IconLogo = ({ size = 20, className = '', style = {} }) => (
   </svg>
 );
 
-const IconMail = ({ size = 16, className = '', style = {} }) => (
+const IconLock = ({ size = 16, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const IconCheck = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
@@ -30,21 +36,9 @@ const IconLoader = ({ size = 18, className = '', style = {} }) => (
   </svg>
 );
 
-const IconCheck = ({ size = 28, className = '', style = {} }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
 const IconArrowLeft = ({ size = 14, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-
-const IconSend = ({ size = 16, className = '', style = {} }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
 );
 
@@ -77,39 +71,87 @@ const darkTokens = {
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 
-export default function ForgotPasswordPage() {
+export default function ResetPasswordPage() {
   const { theme } = useTheme();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
     try {
-      await apiClient.post('/auth/forgot-password', { email });
+      await apiClient.post('/auth/reset-password', { token, password });
       setSuccess(true);
+      setTimeout(() => navigate('/login'), 2500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send reset link. Please try again.');
+      setError(err.response?.data?.message || 'Failed to reset password.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  if (!token) {
+    return (
+      <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-15 blur-[120px] pointer-events-none" style={{ backgroundColor: 'var(--accent-primary)' }} />
+
+        <div className="relative w-full max-w-sm text-center">
+          <div className="flex justify-center mb-8">
+            <Link to="/" className="flex items-center gap-2.5">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
+              >
+                <IconLogo size={20} />
+              </div>
+              <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>RoutePulse</span>
+            </Link>
+          </div>
+
+          <div
+            className="rounded-2xl p-8 sm:p-10 space-y-5"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
+          >
+            <div className="flex justify-center">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: 'var(--accent-critical)' + '15', color: 'var(--accent-critical)' }}
+              >
+                <IconAlert size={32} />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Invalid reset link</h1>
+              <p className="text-[13px] mt-2" style={{ color: 'var(--text-secondary)' }}>
+                The password reset link is missing or malformed.
+              </p>
+            </div>
+            <Link
+              to="/forgot-password"
+              className="inline-flex items-center justify-center gap-2 w-full rounded-xl py-3 text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: 'var(--accent-primary)', boxShadow: cardShadow }}
+            >
+              Request new link
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden py-12">
-      {/* Ambient glow */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-15 blur-[120px] pointer-events-none"
-        style={{ backgroundColor: 'var(--accent-primary)' }}
-      />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-15 blur-[120px] pointer-events-none" style={{ backgroundColor: 'var(--accent-primary)' }} />
 
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2.5">
             <div
@@ -122,66 +164,43 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        {/* Card */}
         <div
           className="rounded-2xl p-7 sm:p-8 space-y-5"
           style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
         >
           <div>
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Forgot password</h1>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Reset your password</h1>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>
-              Enter your email and we'll send you a reset link.
+              Choose a new password for your account.
             </p>
           </div>
 
           {success ? (
             <div className="space-y-5">
-              <div className="flex justify-center">
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                  style={{ backgroundColor: 'var(--badge-success-bg)', color: 'var(--badge-success-text)' }}
-                >
-                  <IconCheck size={32} />
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Check your inbox</p>
-                <p className="text-[13px] mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  If an account exists for <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{email}</span>, you will receive a reset link shortly.
-                </p>
-              </div>
-              <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 w-full rounded-xl py-3 text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
-                style={{ backgroundColor: 'var(--accent-primary)', boxShadow: cardShadow }}
+              <div
+                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium"
+                style={{ color: 'var(--badge-success-text)', backgroundColor: 'var(--badge-success-bg)', border: '1px solid var(--badge-success-bg)' }}
               >
-                Back to Sign In
-              </Link>
+                <IconCheck size={16} />
+                Password reset successfully. Redirecting…
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
               <div className="space-y-1.5">
-                <label
-                  className="block text-[11px] font-semibold uppercase tracking-wider"
-                  style={{ color: 'var(--text-muted)' }}
-                  htmlFor="email"
-                >
-                  Email Address
+                <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }} htmlFor="password">
+                  New Password
                 </label>
                 <div className="relative">
-                  <IconMail
-                    size={15}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
+                  <IconLock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
                   <input
-                    id="email"
-                    type="email"
+                    id="password"
+                    type="password"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
                     className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-[1.5px] transition-all"
                     style={{
                       backgroundColor: 'var(--bg-page)',
@@ -191,24 +210,19 @@ export default function ForgotPasswordPage() {
                     }}
                   />
                 </div>
+                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Minimum 8 characters.</p>
               </div>
 
-              {/* Error */}
               {error && (
                 <div
                   className="flex items-start gap-2 rounded-xl px-4 py-3 text-xs font-medium"
-                  style={{
-                    color: 'var(--accent-critical)',
-                    backgroundColor: 'var(--accent-critical)' + '10',
-                    border: '1px solid var(--accent-critical)' + '25',
-                  }}
+                  style={{ color: 'var(--accent-critical)', backgroundColor: 'var(--accent-critical)' + '10', border: '1px solid var(--accent-critical)' + '25' }}
                 >
                   <IconAlert size={14} className="flex-shrink-0 mt-0.5" />
                   {error}
                 </div>
               )}
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -218,28 +232,23 @@ export default function ForgotPasswordPage() {
                 {isSubmitting ? (
                   <>
                     <IconLoader size={16} className="animate-spin" />
-                    Sending…
+                    Resetting…
                   </>
                 ) : (
-                  <>
-                    <IconSend size={15} />
-                    Send Reset Link
-                  </>
+                  'Reset Password'
                 )}
               </button>
             </form>
           )}
 
-          {!success && (
-            <Link
-              to="/login"
-              className="flex items-center justify-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
-              style={{ color: 'var(--accent-primary)' }}
-            >
-              <IconArrowLeft size={14} />
-              Back to Sign In
-            </Link>
-          )}
+                    <Link
+            to="/login"
+            className="flex items-center justify-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
+            style={{ color: 'var(--accent-primary)' }}
+          >
+            <IconArrowLeft size={14} />
+            Back to Sign In
+          </Link>
         </div>
       </div>
     </div>

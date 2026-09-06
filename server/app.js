@@ -22,6 +22,7 @@ import analyticsRoutes from './src/routes/analytics.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
 import searchRoutes from './src/routes/search.routes.js';
 import scheduleRoutes from './src/routes/schedule.routes.js';
+import { startGt06Server } from './src/tcp/gt06Server.js';
 
 const app = express();
 app.set('trust proxy', 1); // required on Render/behind a reverse proxy for secure cookies + accurate IPs
@@ -87,6 +88,9 @@ async function start() {
   server.listen(port, () => {
     console.log(`Server running on port ${port} [${process.env.NODE_ENV}]`);
   });
+
+  const gt06Port = process.env.GT06_TCP_PORT || 5023;
+  startGt06Server({ port: gt06Port, io });
 }
 
 start();

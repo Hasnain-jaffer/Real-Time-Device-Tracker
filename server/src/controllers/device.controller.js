@@ -46,11 +46,12 @@ export async function getDevice(req, res, next) {
 
 export async function updateDevice(req, res, next) {
   try {
-    const { name, identifier, trackingEnabled } = req.body;
+    const { name, identifier, trackingEnabled, imei } = req.body;
     const update = {};
     if (name !== undefined) update.name = name;
     if (identifier !== undefined) update.identifier = identifier;
     if (trackingEnabled !== undefined) update.trackingEnabled = trackingEnabled;
+    if (imei !== undefined) update.imei = imei;
 
     const device = await Device.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user.id },

@@ -32,6 +32,13 @@ const deviceSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+        imei: {
+      type: String,
+      default: null,
+      unique: true,
+      sparse: true, // allows many devices to have imei: null without violating uniqueness
+      index: true,
+    },
     status: {
       type: String,
       enum: ['online', 'offline'],

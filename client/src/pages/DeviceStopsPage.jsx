@@ -1,32 +1,26 @@
 // client/src/pages/DeviceStopsPage.jsx
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { useParams, Link } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
-import { useGeofences } from '../features/geofences/hooks/useGeofences';
-import GeofenceLayer from '../features/geofences/components/GeofenceLayer';
-import GeofenceFormModal from '../features/geofences/components/GeofenceFormModal';
-import MapSizeFix from '../components/map/MapSizeFix';
-import { useToast } from '../app/ToastContext';
-import { useAuth } from '../app/AuthContext';
 import { useTheme } from '../app/ThemeContext';
+import GeofenceFormModal from '../features/geofences/components/GeofenceFormModal';
 
 /* ─── SVG Icons ─── */
-const IconArrowLeft = ({ size = 16, className = '', style = {} }) => (
+const IconArrowLeft = ({ size = 14, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
+const IconMapPin = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
   </svg>
 );
 
 const IconPlus = ({ size = 16, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const IconMapPin = ({ size = 18, className = '', style = {} }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
   </svg>
 );
 
@@ -42,9 +36,9 @@ const IconTrash = ({ size = 14, className = '', style = {} }) => (
   </svg>
 );
 
-const IconEmpty = ({ size = 40, className = '', style = {} }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+const IconRoute = ({ size = 16, className = '', style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" /><line x1="12" y1="19" x2="20" y2="5" />
   </svg>
 );
 
@@ -58,8 +52,6 @@ const lightTokens = {
   '--text-muted': '#9C8F73',
   '--accent-primary': '#5E8C61',
   '--accent-critical': '#B94A3A',
-  '--badge-success-bg': '#EAF3DE',
-  '--badge-success-text': '#3B6D26',
 };
 
 const darkTokens = {
@@ -71,290 +63,237 @@ const darkTokens = {
   '--text-muted': '#6E7C73',
   '--accent-primary': '#79B37C',
   '--accent-critical': '#C15D4C',
-  '--badge-success-bg': 'rgba(94,140,97,0.15)',
-  '--badge-success-text': '#79B37C',
 };
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 
-/* ─── Custom Toggle ─── */
-function Toggle({ enabled, onChange, label }) {
-  return (
-    <button
-      onClick={onChange}
-      className="flex items-center gap-2.5 group"
-    >
-      <div
-        className="relative w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200"
-        style={{ backgroundColor: enabled ? 'var(--accent-primary)' : 'var(--border)' }}
-      >
-        <span
-          className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
-          style={{ transform: enabled ? 'translateX(16px)' : 'translateX(0)' }}
-        />
-      </div>
-      <span className="text-xs font-semibold" style={{ color: enabled ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-        {label}
-      </span>
-    </button>
-  );
-}
-
 export default function DeviceStopsPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const { theme } = useTheme();
-  const isAdmin = user?.role === 'admin';
-  const { showToast } = useToast();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
 
   const [device, setDevice] = useState(null);
-  const { geofences, isLoading, addGeofence, editGeofence, removeGeofence } = useGeofences(id);
+  const [stops, setStops] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [editingStop, setEditingStop] = useState(null);
 
   useEffect(() => {
-    apiClient.get(`/devices/${id}`).then(({ data }) => setDevice(data.device));
+    setIsLoading(true);
+    Promise.all([
+      apiClient.get(`/devices/${id}`),
+      apiClient.get(`/devices/${id}/stops`),
+    ])
+      .then(([deviceRes, stopsRes]) => {
+        setDevice(deviceRes.data.device);
+        const sorted = (stopsRes.data.stops || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        setStops(sorted);
+      })
+      .finally(() => setIsLoading(false));
   }, [id]);
 
-  async function handleSubmit(payload) {
-    if (editing) {
-      await editGeofence(editing._id, payload);
-      showToast('Stop updated', 'success');
-    } else {
-      await addGeofence(payload);
-      showToast('Stop added', 'success');
+  async function handleDelete(stopId) {
+    if (!window.confirm('Delete this stop?')) return;
+    try {
+      await apiClient.delete(`/geofences/${stopId}`);
+      setStops((prev) => prev.filter((s) => s._id !== stopId));
+    } catch (err) {
+      alert('Failed to delete stop.');
     }
   }
 
-  async function handleDelete(fenceId) {
-    await removeGeofence(fenceId);
-    showToast('Stop deleted', 'success');
-    setDeleteConfirmId(null);
+  async function handleSubmit(data) {
+    if (editingStop) {
+      const { data: updated } = await apiClient.patch(`/geofences/${editingStop._id}`, data);
+      setStops((prev) => prev.map((s) => (s._id === updated.stop._id ? updated.stop : s)));
+    } else {
+      const { data: created } = await apiClient.post('/geofences', { ...data, deviceId: id });
+      setStops((prev) => [...prev, created.stop].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+    }
   }
 
-  async function handleToggleActive(fence) {
-    await editGeofence(fence._id, { isActive: !fence.isActive });
+  function openAdd() {
+    setEditingStop(null);
+    setModalOpen(true);
   }
 
-  const mapCenter = geofences.length > 0
-    ? [geofences[0].latitude, geofences[0].longitude]
-    : device?.lastLocation?.latitude
-      ? [device.lastLocation.latitude, device.lastLocation.longitude]
-      : [25.4610, 68.7183];
-
-  const activeCount = geofences.filter((g) => g.isActive).length;
+  function openEdit(stop) {
+    setEditingStop(stop);
+    setModalOpen(true);
+  }
 
   return (
-    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+    <div
+      className="flex-1 w-full p-4 sm:p-6 lg:p-8"
+      style={{ ...tokens, backgroundColor: 'var(--bg-page)' }}
+    >
       <div className="max-w-5xl mx-auto space-y-5">
-
-        {/* Back */}
-        <button
-          onClick={() => navigate(`/devices/${id}`)}
-          className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-80 transition-opacity"
-          style={{ color: 'var(--accent-primary)' }}
-        >
-          <IconArrowLeft size={14} /> Back to {device?.name || 'bus'}
-        </button>
-
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Link
+                to={`/devices/${id}`}
+                className="flex items-center gap-1 text-xs font-semibold transition hover:opacity-80"
+                style={{ color: 'var(--accent-primary)' }}
+              >
+                <IconArrowLeft size={12} />
+                Back to Device
+              </Link>
+            </div>
             <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              {device?.name || 'Bus'} — Stops
+              Manage Stops
             </h1>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-              {geofences.length} stop{geofences.length !== 1 ? 's' : ''} · {activeCount} active
+              {device?.name || 'Device'} — {stops.length} {stops.length === 1 ? 'stop' : 'stops'} configured
             </p>
           </div>
-          {isAdmin && (
-            <button
-              onClick={() => {
-                setEditing(null);
-                setModalOpen(true);
+
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/devices/${id}/route`}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition hover:opacity-90 active:scale-[0.98]"
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)',
+                boxShadow: cardShadow,
               }}
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 active:scale-95 transition-all flex-shrink-0"
+            >
+              <IconRoute size={14} />
+              View Route
+            </Link>
+
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
               style={{ backgroundColor: 'var(--accent-primary)', boxShadow: cardShadow }}
             >
-              <IconPlus size={16} />
-              Add stop
+              <IconPlus size={14} />
+              Add Stop
             </button>
-          )}
+          </div>
         </div>
 
-        {isLoading ? (
-          <div className="space-y-4">
-            <div className="h-[320px] rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }} />
-            {[1, 2].map((i) => (
-              <div key={i} className="h-[72px] rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }} />
-            ))}
-          </div>
-        ) : geofences.length === 0 ? (
-          <div
-            className="rounded-2xl p-12 text-center flex flex-col items-center"
-            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
-          >
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-page)' }}>
-              <IconEmpty size={32} style={{ color: 'var(--text-muted)' }} />
+        {/* Stops List */}
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
+        >
+          {isLoading ? (
+            <div className="p-6 space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--border)' }} />
+              ))}
             </div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No stops set up yet</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-              Add stops to get notified when the bus arrives or leaves.
-            </p>
-            {isAdmin && (
-              <button
-                onClick={() => {
-                  setEditing(null);
-                  setModalOpen(true);
-                }}
-                className="mt-5 flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: 'var(--accent-primary)' }}
-              >
-                <IconPlus size={16} />
-                Add your first stop
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Map */}
-            <div
-              className="relative rounded-2xl overflow-hidden"
-              style={{ height: '320px', border: '1px solid var(--border)', boxShadow: cardShadow }}
-            >
-              <MapContainer
-                center={mapCenter}
-                zoom={14}
-                style={{ width: '100%', height: '100%' }}
-                attributionControl={false}
-              >
-                <TileLayer
-                  url={
-                    theme === 'dark'
-                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-                  }
-                />
-                <GeofenceLayer geofences={geofences} />
-                <MapSizeFix />
-              </MapContainer>
-
-              {/* Map overlay badge */}
+          ) : stops.length === 0 ? (
+            <div className="p-10 text-center">
               <div
-                className="absolute bottom-3 left-3 text-[11px] font-medium px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10"
-                style={{ backgroundColor: 'rgba(0,0,0,0.45)', color: '#FFFFFF' }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}
               >
-                {geofences.length} stop{geofences.length !== 1 ? 's' : ''} on map
+                <IconMapPin size={24} style={{ color: 'var(--text-muted)' }} />
               </div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                No stops yet
+              </p>
+              <p className="text-[11px] mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>
+                Add stops to build the route for this device.
+              </p>
+              <button
+                onClick={openAdd}
+                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
+                style={{ backgroundColor: 'var(--accent-primary)', boxShadow: cardShadow }}
+              >
+                <IconPlus size={14} />
+                Add First Stop
+              </button>
             </div>
-
-            {/* Stops list */}
-            <div className="space-y-3">
-              {geofences.map((fence) => (
+          ) : (
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {stops.map((stop, index) => (
                 <div
-                  key={fence._id}
-                  className="rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 transition-all hover:shadow-md"
-                  style={{
-                    backgroundColor: 'var(--bg-surface)',
-                    border: '1px solid var(--border)',
-                    borderLeftWidth: '3px',
-                    borderLeftColor: fence.isActive ? fence.color || 'var(--accent-primary)' : 'var(--border)',
-                    boxShadow: cardShadow,
-                  }}
+                  key={stop._id}
+                  className="flex items-center gap-4 px-5 py-4 transition-colors hover:opacity-80"
+                  style={{ backgroundColor: 'var(--bg-surface)' }}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: fence.color ? fence.color + '18' : 'var(--bg-page)' }}
-                    >
-                      <IconMapPin size={18} style={{ color: fence.color || 'var(--accent-primary)' }} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{fence.name}</p>
-                      <p className="text-xs mt-0.5 capitalize" style={{ color: 'var(--text-muted)' }}>
-                        {fence.type} · {fence.radiusMeters}m radius
-                      </p>
-                    </div>
+                  {/* Order number */}
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                    style={{
+                      backgroundColor: index === 0 || index === stops.length - 1 ? 'var(--accent-primary)' + '18' : 'var(--bg-page)',
+                      color: index === 0 || index === stops.length - 1 ? 'var(--accent-primary)' : 'var(--text-muted)',
+                      border: `1px solid ${index === 0 || index === stops.length - 1 ? 'var(--accent-primary)' + '30' : 'var(--border)'}`,
+                    }}
+                  >
+                    {index + 1}
                   </div>
 
-                  {isAdmin ? (
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <Toggle
-                        enabled={fence.isActive}
-                        onChange={() => handleToggleActive(fence)}
-                        label={fence.isActive ? 'Active' : 'Inactive'}
-                      />
-                      <div className="w-px h-6" style={{ backgroundColor: 'var(--border)' }} />
-                      <button
-                        onClick={() => {
-                          setEditing(fence);
-                          setModalOpen(true);
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {stop.name}
+                      </h3>
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: stop.type === 'start' || stop.type === 'home' ? 'var(--accent-primary)' + '15' : 'var(--bg-page)',
+                          color: stop.type === 'start' || stop.type === 'home' ? 'var(--accent-primary)' : 'var(--text-muted)',
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-black/5"
-                        style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
                       >
-                        <IconEdit size={13} />
-                        Edit
-                      </button>
-
-                      {deleteConfirmId === fence._id ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleDelete(fence._id)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-white hover:opacity-90 transition-opacity"
-                            style={{ backgroundColor: 'var(--accent-critical)' }}
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmId(null)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-black/[0.03] transition-colors"
-                            style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirmId(fence._id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/10"
-                          style={{ color: 'var(--accent-critical)', border: '1px solid var(--accent-critical)', opacity: 0.8 }}
-                        >
-                          <IconTrash size={13} />
-                          Delete
-                        </button>
+                        {stop.type || 'stop'}
+                      </span>
+                      {index === 0 && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--accent-primary)' + '15', color: 'var(--accent-primary)' }}>
+                          Start
+                        </span>
+                      )}
+                      {index === stops.length - 1 && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--accent-eta)' + '15', color: 'var(--accent-eta)' }}>
+                          End
+                        </span>
                       )}
                     </div>
-                  ) : (
-                    <span
-                      className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                      style={
-                        fence.isActive
-                          ? { backgroundColor: 'var(--badge-success-bg)', color: 'var(--badge-success-text)' }
-                          : { backgroundColor: 'var(--bg-page)', color: 'var(--text-muted)' }
-                      }
+                    <p className="text-[11px] mt-0.5 font-mono truncate" style={{ color: 'var(--text-muted)' }}>
+                      {stop.latitude?.toFixed(5)}, {stop.longitude?.toFixed(5)} · Radius: {stop.radiusMeters || 150}m
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => openEdit(stop)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition hover:opacity-80"
+                      style={{ color: 'var(--accent-primary)', backgroundColor: 'var(--bg-page)' }}
+                      title="Edit"
                     >
-                      {fence.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  )}
+                      <IconEdit size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(stop._id)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition hover:opacity-80"
+                      style={{ color: 'var(--accent-critical)', backgroundColor: 'var(--bg-page)' }}
+                      title="Delete"
+                    >
+                      <IconTrash size={14} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          </>
-        )}
-
-        {isAdmin && (
-          <GeofenceFormModal
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            onSubmit={handleSubmit}
-            initialValues={editing}
-          />
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Modal */}
+      <GeofenceFormModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleSubmit}
+        initialValues={editingStop}
+        tokens={tokens}
+      />
     </div>
   );
 }

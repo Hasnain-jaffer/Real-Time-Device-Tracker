@@ -185,6 +185,13 @@ export default function DeviceDetailsPage() {
               Full history
             </Link>
             <Link
+              to={`/devices/${device._id}/route`}
+              className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              View Route
+            </Link>
+            <Link
               to={`/devices/${device._id}/stops`}
               className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
               style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}

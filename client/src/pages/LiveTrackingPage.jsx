@@ -135,9 +135,7 @@ export default function LiveTrackingPage() {
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
   const isDark = theme === 'dark';
 
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 
   useEffect(() => {
     let watchId;

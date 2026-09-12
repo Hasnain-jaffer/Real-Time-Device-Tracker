@@ -159,10 +159,7 @@ export default function DashboardPage() {
       )
     : [];
 
-  const tileUrl =
-    theme === 'dark'
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 
   const pulsingIcon = L.divIcon({
     className: '',

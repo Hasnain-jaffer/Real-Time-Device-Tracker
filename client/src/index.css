@@ -263,3 +263,29 @@ html.dark {
     border-right-color: var(--rp-border);
   }
 }
+
+/* ─── Map Containment Fix ─── */
+.map-wrapper {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+
+/* Dark mode filter for map tiles (no API key needed) */
+.dark-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.72) contrast(1.3) saturate(0.6);
+}
+
+/* Custom marker cleanup */
+.custom-bus-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure leaflet respects parent bounds */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}

@@ -33,6 +33,7 @@ const AboutPage = lazy(() => import('./pages/static/AboutPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/static/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/static/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/static/NotFoundPage'));
+const DeviceRoutePage = lazy(() => import('./pages/DeviceRoutePage'));
 
 function Protected({ children }) {
   return (
@@ -126,6 +127,7 @@ export default function App() {
                 <Route path="/tracking" element={<Protected><LiveTrackingPage /></Protected>} />
                 <Route path="/history" element={<Protected><DeviceHistoryPage /></Protected>} />
                 <Route path="/devices/:id/stops" element={<Protected><DeviceStopsPage /></Protected>} />
+                <Route path="/devices/:id/route" element={<Protected><DeviceRoutePage /></Protected>} />
                 <Route
                   path="/analytics"
                   element={

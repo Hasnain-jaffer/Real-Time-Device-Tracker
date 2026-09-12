@@ -18,3 +18,7 @@ export function updateGeofence(id, updates) {
 export function deleteGeofence(id) {
   return apiClient.delete(`/geofences/${id}`).then((res) => res.data);
 }
+
+export function getDeviceRoute(deviceId) {
+  return apiClient.get(`/geofences/device/${deviceId}/route`).then((res) => res.data);
+}

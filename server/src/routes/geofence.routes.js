@@ -5,6 +5,7 @@ import {
   createGeofence,
   updateGeofence,
   deleteGeofence,
+  getDeviceRoute,
 } from '../controllers/geofence.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', listGeofences);
+router.get('/device/:deviceId/route', getDeviceRoute);
 
 router.post('/', authorize('admin'), createGeofence);
 router.patch('/:id', authorize('admin'), updateGeofence);

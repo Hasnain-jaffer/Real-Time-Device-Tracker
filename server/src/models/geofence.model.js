@@ -40,6 +40,11 @@ const geofenceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // The order of the geofence in the list
+    order: {
+      type: Number,
+      default: 0,
+    },
     // Optional: restrict this stop to specific buses/routes; empty = applies to all owner's devices
     deviceIds: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],

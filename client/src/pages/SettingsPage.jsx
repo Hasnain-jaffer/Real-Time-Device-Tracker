@@ -430,7 +430,7 @@ export default function SettingsPage() {
         {/* Footer */}
        <div className="text-center space-y-1 pb-4">
   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-    RoutePulse v1.0 · <button onClick={() => navigate('/about')} className="hover:underline" style={{ color: 'var(--accent-primary)' }}>About</button> · <button onClick={() => navigate('/help')} className="hover:underline" style={{ color: 'var(--accent-primary)' }}>Help</button>
+    My Campus Ride v1.0 · <button onClick={() => navigate('/about')} className="hover:underline" style={{ color: 'var(--accent-primary)' }}>About</button> · <button onClick={() => navigate('/help')} className="hover:underline" style={{ color: 'var(--accent-primary)' }}>Help</button>
   </p>
   <p className="text-[10px]" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>
     Your data is encrypted and never shared with third parties.

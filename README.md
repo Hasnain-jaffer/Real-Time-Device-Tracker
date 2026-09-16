@@ -1,4 +1,4 @@
-# Real-Time Device Tracker
+# My Campus Ride 
 
 A real-time location tracking web app built with **Node.js**, **Express**, **Socket.IO**, and **Leaflet**. Every connected device shares its live GPS position, and all clients see every device's marker update on a shared map in real time — no page refresh required.
 

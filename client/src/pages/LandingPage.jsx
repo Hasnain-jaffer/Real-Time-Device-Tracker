@@ -149,7 +149,7 @@ export default function LandingPage() {
             <IconLogo size={18} />
           </div>
           <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            RoutePulse
+            My Campus Ride
           </span>
         </Link>
 
@@ -399,7 +399,7 @@ export default function LandingPage() {
             >
               <IconLogo size={14} />
             </div>
-            <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>RoutePulse</span>
+            <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>My Campus Ride</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] font-medium">
@@ -422,7 +422,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            © 2026 RoutePulse. All rights reserved.
+            © 2026 My Campus Ride. All rights reserved.
           </p>
         </div>
       </footer>

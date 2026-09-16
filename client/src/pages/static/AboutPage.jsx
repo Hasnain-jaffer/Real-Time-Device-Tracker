@@ -41,10 +41,10 @@ export default function AboutPage() {
   ];
 
   return (
-    <StaticPageLayout title="About RoutePulse">
+    <StaticPageLayout title="About My Campus Ride">
       <div className="rounded-2xl p-6 sm:p-8 space-y-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}>
         <p className="text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          RoutePulse is a real-time location tracking platform built for fleet operators, transit teams, and logistics coordinators who need reliable, live visibility into their vehicles.
+          My Campus Ride is a real-time location tracking platform built for fleet operators, transit teams, and logistics coordinators who need reliable, live visibility into their vehicles.
         </p>
         <p className="text-[15px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Our mission is to make real-time location sharing simple, secure, and genuinely useful — without unnecessary complexity or bloated dashboards.

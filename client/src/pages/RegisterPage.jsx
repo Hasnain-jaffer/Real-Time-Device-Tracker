@@ -164,7 +164,7 @@ export default function RegisterPage() {
             >
               <IconLogo size={20} />
             </div>
-            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>RoutePulse</span>
+            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>My Campus Ride</span>
           </Link>
         </div>
 

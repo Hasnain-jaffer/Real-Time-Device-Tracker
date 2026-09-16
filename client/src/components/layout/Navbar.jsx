@@ -331,7 +331,7 @@ export default function Navbar() {
             <IconLogo size={18} />
           </span>
           <span className="font-bold text-[15px] tracking-tight" style={{ color: 'var(--text-nav-active)' }}>
-            RoutePulse
+            My Campus Ride
           </span>
         </div>
 
@@ -357,7 +357,7 @@ export default function Navbar() {
             <IconLogo size={15} />
           </span>
           <span className="font-bold text-sm tracking-tight" style={{ color: 'var(--text-nav-active)' }}>
-            RoutePulse
+            My Campus Ride
           </span>
         </div>
 
@@ -426,7 +426,7 @@ export default function Navbar() {
               <IconLogo size={15} />
             </span>
             <span className="font-bold text-sm tracking-tight" style={{ color: 'var(--text-nav-active)' }}>
-              RoutePulse
+              My Campus Ride
             </span>
           </div>
           <button

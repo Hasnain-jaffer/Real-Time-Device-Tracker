@@ -53,7 +53,7 @@ export default function StaticPageLayout({ title, children }) {
           <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}>
             <IconLogo size={16} />
           </span>
-          RoutePulse
+          My Campus Ride
         </Link>
         <nav className="flex items-center gap-1">
           {navLinks.map((link) => (
@@ -85,7 +85,7 @@ export default function StaticPageLayout({ title, children }) {
       {/* Footer */}
       <footer className="px-6 py-6 text-center" style={{ borderTop: '1px solid var(--border)' }}>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          &copy; {new Date().getFullYear()} RoutePulse. All rights reserved.
+          &copy; {new Date().getFullYear()} My Campus Ride. All rights reserved.
         </p>
       </footer>
     </div>

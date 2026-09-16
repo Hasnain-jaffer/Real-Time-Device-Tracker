@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
         style={{ backgroundColor: 'var(--bg-surface)', border: '1px dashed var(--border)' }}
       >
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Questions? Reach out at <a href="mailto:privacy@routepulse.app" className="font-medium hover:underline" style={{ color: 'var(--accent-primary)' }}>privacy@routepulse.app</a>
+          Questions? Reach out at <a href="mailto:privacy@My Campus Ride.app" className="font-medium hover:underline" style={{ color: 'var(--accent-primary)' }}>privacy@My Campus Ride.app</a>
         </p>
       </div>
     </StaticPageLayout>

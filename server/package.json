@@ -1,5 +1,5 @@
 {
-  "name": "device-tracker-server",
+  "name": "My Campus Ride",
   "version": "2.0.0",
   "description": "Real-Time Device Tracker API + Socket server",
   "main": "app.js",

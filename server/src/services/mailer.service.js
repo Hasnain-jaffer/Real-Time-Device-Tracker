@@ -27,7 +27,7 @@ async function sendEmail({ to, subject, html }) {
 export async function sendVerificationEmail(to, verifyUrl) {
   return sendEmail({
     to,
-    subject: 'Verify your Device Tracker account',
+    subject: 'Verify your My Campus Ride account',
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: auto;">
         <h2>Verify your email</h2>
@@ -44,7 +44,7 @@ export async function sendVerificationEmail(to, verifyUrl) {
 export async function sendPasswordResetEmail(to, resetUrl) {
   return sendEmail({
     to,
-    subject: 'Reset your Device Tracker password',
+    subject: 'Reset your My Campus Ride password',
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: auto;">
         <h2>Reset your password</h2>

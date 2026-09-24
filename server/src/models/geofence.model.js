@@ -45,10 +45,11 @@ const geofenceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    // Optional: restrict this stop to specific buses/routes; empty = applies to all owner's devices
-    deviceIds: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],
-      default: [],
+       routeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Route',
+      required: true,
+      index: true,
     },
   },
   { timestamps: true }

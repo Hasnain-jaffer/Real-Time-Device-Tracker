@@ -23,6 +23,7 @@ import adminRoutes from './src/routes/admin.routes.js';
 import searchRoutes from './src/routes/search.routes.js';
 import scheduleRoutes from './src/routes/schedule.routes.js';
 import { startGt06Server } from './src/tcp/gt06Server.js';
+import routeRoutes from './src/routes/route.routes.js';
 
 const app = express();
 app.set('trust proxy', 1); // required on Render/behind a reverse proxy for secure cookies + accurate IPs
@@ -67,6 +68,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/search', searchRoutes);
 // --- Schedule routes ---
 app.use('/api/schedule', scheduleRoutes);
+// --- Route routes ---
+app.use('/api/routes', routeRoutes);
 
 // --- Socket handlers (existing V1 logic, unchanged) ---
 registerLocationHandlers(io);

@@ -45,11 +45,9 @@ export async function getDeviceRoute(req, res, next) {
 
 export async function listGeofences(req, res, next) {
   try {
-    const { deviceId } = req.query;
-    const query = deviceId ? { deviceIds: deviceId } : {};
-    // Sort by order (route sequence) when scoped to a device, so the
-    // route/timeline view can render stops start-to-end correctly.
-    const sortBy = deviceId ? { order: 1 } : { createdAt: -1 };
+    const { routeId } = req.query;
+    const query = routeId ? { routeId } : {};
+    const sortBy = routeId ? { order: 1 } : { createdAt: -1 };
     const geofences = await Geofence.find(query).sort(sortBy);
     res.json({ geofences });
   } catch (err) {
@@ -59,17 +57,15 @@ export async function listGeofences(req, res, next) {
 
 export async function createGeofence(req, res, next) {
   try {
-    const { name, type, latitude, longitude, radiusMeters, color, deviceIds } = req.body;
+    const { name, type, latitude, longitude, radiusMeters, color, routeId } = req.body;
     if (!name || latitude == null || longitude == null) {
       return res.status(400).json({ message: 'Name, latitude, and longitude are required' });
     }
-    if (!deviceIds || deviceIds.length === 0) {
-      return res.status(400).json({ message: 'A stop must be linked to at least one bus/route' });
+    if (!routeId) {
+      return res.status(400).json({ message: 'A stop must belong to a route' });
     }
 
-    // Auto-increment order within the scope of the first linked device,
-    // so newly added stops append to the end of that bus's route.
-    const lastStop = await Geofence.findOne({ deviceIds: deviceIds[0] }).sort({ order: -1 });
+    const lastStop = await Geofence.findOne({ routeId }).sort({ order: -1 });
     const nextOrder = lastStop ? lastStop.order + 1 : 0;
 
     const geofence = await Geofence.create({
@@ -79,8 +75,8 @@ export async function createGeofence(req, res, next) {
       latitude,
       longitude,
       radiusMeters: radiusMeters || 100,
-      color: color || '#2563EB',
-      deviceIds: deviceIds || [],
+      color: color || '#5E8C61',
+      routeId,
       order: nextOrder,
     });
 
@@ -93,8 +89,8 @@ export async function createGeofence(req, res, next) {
 export async function updateGeofence(req, res, next) {
   try {
     const update = {};
-    ['name', 'type', 'latitude', 'longitude', 'radiusMeters', 'color', 'isActive', 'deviceIds', 'order'].forEach((key) => {      
-      if (req.body[key] !== undefined) update[key] = req.body[key];
+    ['name', 'type', 'latitude', 'longitude', 'radiusMeters', 'color', 'isActive', 'routeId', 'order'].forEach((key) => {
+          if (req.body[key] !== undefined) update[key] = req.body[key];
     });
     const geofence = await Geofence.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user.id },

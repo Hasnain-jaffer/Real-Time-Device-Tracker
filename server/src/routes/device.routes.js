@@ -7,6 +7,7 @@ import {
   updateDevice,
   deleteDevice,
   regenerateDeviceKey,
+  getNearbyDevices 
 } from '../controllers/device.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // Viewing buses is available to every logged-in user
+router.get('/nearby', getNearbyDevices);
 router.get('/', listMyDevices);
 router.get('/:id', getDevice);
 

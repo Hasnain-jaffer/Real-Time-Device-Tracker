@@ -42,26 +42,23 @@ async function maybeFireDelayAlert(io, allUsers, { deviceId, deviceName, geofenc
     });
   }
 }
-
 export async function evaluateGeofences({ deviceId, deviceName, latitude, longitude, io }) {
   if (!deviceId) return;
 
   try {
-    // Stops/geofences are shared (admin-managed, visible to all) — no ownerId filter anymore.
-    const geofences = await Geofence.find({ isActive: true });
-    if (geofences.length === 0) return;
+    const device = await Device.findById(deviceId).select('insideGeofenceIds routeId');
+    if (!device || !device.routeId) return; // no route assigned -- nothing to evaluate
 
-    const device = await Device.findById(deviceId).select('insideGeofenceIds');
-    if (!device) return;
+    // Only this device's own route's stops are relevant -- much cheaper than
+    // scanning every geofence in the system, and correct now that stops
+    // belong to a route rather than being directly linked to buses.
+    const geofences = await Geofence.find({ routeId: device.routeId, isActive: true });
+    if (geofences.length === 0) return;
 
     const previouslyInside = new Set(device.insideGeofenceIds.map((id) => id.toString()));
     const currentlyInside = new Set();
 
     for (const fence of geofences) {
-      if (fence.deviceIds.length > 0 && !fence.deviceIds.some((id) => id.toString() === deviceId)) {
-        continue;
-      }
-
       const distance = haversineMeters(latitude, longitude, fence.latitude, fence.longitude);
       const wasInside = previouslyInside.has(fence._id.toString());
       const isInside = wasInside

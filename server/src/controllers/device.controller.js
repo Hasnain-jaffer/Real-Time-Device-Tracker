@@ -89,3 +89,37 @@ export async function regenerateDeviceKey(req, res, next) {
     next(err);
   }
 }
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export async function getNearbyDevices(req, res, next) {
+  try {
+    const { lat, lng, limit = 5 } = req.query;
+    if (lat == null || lng == null) {
+      return res.status(400).json({ message: 'lat and lng are required' });
+    }
+
+    const onlineDevices = await Device.find({ status: 'online', 'lastLocation.latitude': { $ne: null } });
+
+    const withDistance = onlineDevices
+      .map((d) => ({
+        ...d.toObject(),
+        distanceMeters: Math.round(
+          haversineMeters(Number(lat), Number(lng), d.lastLocation.latitude, d.lastLocation.longitude)
+        ),
+      }))
+      .sort((a, b) => a.distanceMeters - b.distanceMeters)
+      .slice(0, Number(limit));
+
+    res.json({ devices: withDistance });
+  } catch (err) {
+    next(err);
+  }
+}

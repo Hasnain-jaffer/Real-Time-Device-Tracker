@@ -56,6 +56,12 @@ const deviceSchema = new mongoose.Schema(
       latitude: { type: Number, default: null },
       longitude: { type: Number, default: null },
     },
+    routeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Route',
+      default: null,
+      index: true,
+    },
     insideGeofenceIds: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Geofence' }],
       default: [],

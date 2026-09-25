@@ -322,7 +322,7 @@ export default function LiveTrackingPage() {
                 History
               </button>
               <button
-                onClick={() => selected?._id && navigate(`/devices/${selected._id}/stops`)}
+                onClick={() => selected?._id && navigate(`/routes/${selected.routeId}`)}
                 className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition hover:opacity-90 active:scale-95"
                 style={{
                   backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
@@ -333,7 +333,7 @@ export default function LiveTrackingPage() {
                 }}
               >
                 <IconStops size={13} />
-                Stops
+                Route
               </button>
             </div>
           </>

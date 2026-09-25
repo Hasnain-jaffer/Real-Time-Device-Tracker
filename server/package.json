@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon app.js",
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "node src/tcp/testGt06Client.js"
   },
   "dependencies": {
     "express": "^5.2.1",

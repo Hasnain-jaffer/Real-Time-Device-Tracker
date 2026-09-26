@@ -105,6 +105,14 @@ const IconLogout = ({ size = 16, className = '' }) => (
   </svg>
 );
 
+const IconMap = ({ size = 18, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />  
+  </svg>
+);
+
+
+
 /* ═══════════════════════════════════════════
    NAV CONFIG
    ═══════════════════════════════════════════ */
@@ -114,6 +122,7 @@ const NAV_ITEMS = [
   { to: '/tracking', label: 'Live tracking', Icon: IconMapPin },
   { to: '/history', label: 'History', Icon: IconClock },
   { to: '/analytics', label: 'Analytics', Icon: IconBarChart, adminOnly: true },
+  { to: '/route-center', label: 'Route Center', Icon: IconMap, adminOnly: true },
   { to: '/admin', label: 'Admin', Icon: IconShield, adminOnly: true },
   { to: '/settings', label: 'Settings', Icon: IconSettings },
 ];

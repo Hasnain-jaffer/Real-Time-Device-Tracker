@@ -109,3 +109,12 @@ export async function assignBusToRoute(req, res, next) {
     next(err);
   }
 }
+
+export async function listRouteBuses(req, res, next) {
+  try {
+    const buses = await Device.find({ routeId: req.params.id });
+    res.json({ buses });
+  } catch (err) {
+    next(err);
+  }
+}

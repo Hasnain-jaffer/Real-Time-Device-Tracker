@@ -46,6 +46,8 @@ const IconHistory = ({ size = 14, className = '', style = {} }) => (
 const IconBus = ({ size = 18, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <rect x="3" y="6" width="18" height="12" rx="2" /><path d="M6 18v2" /><path d="M18 18v2" /><path d="M6 10h12" />
+    <circle cx="7.5" cy="18" r="0.5" fill="currentColor" />
+    <circle cx="16.5" cy="18" r="0.5" fill="currentColor" />
   </svg>
 );
 
@@ -61,9 +63,9 @@ const IconSignal = ({ size = 16, className = '', style = {} }) => (
   </svg>
 );
 
-const IconStops = ({ size = 14, className = '', style = {} }) => (
+const IconRoute = ({ size = 14, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+    <circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" /><line x1="12" y1="19" x2="20" y2="5" />
   </svg>
 );
 
@@ -95,6 +97,12 @@ const darkTokens = {
 };
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
+
+/* ─── Tile URLs ─── */
+const TILES = {
+  normal: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+};
 
 /* ─── Bus Icon (Leaflet) ─── */
 function getBusIcon(color = '#5E8C61') {
@@ -131,11 +139,10 @@ export default function LiveTrackingPage() {
   const [selectedKey, setSelectedKey] = useState(null);
   const [hiddenIds, setHiddenIds] = useState(new Set());
   const [query, setQuery] = useState('');
+  const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
 
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
   const isDark = theme === 'dark';
-
-  const tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 
   useEffect(() => {
     let watchId;
@@ -160,6 +167,10 @@ export default function LiveTrackingPage() {
     trackedDevices[0] ||
     null;
 
+  /* ─── KEY FIX: registered devices carry _id; socket-only devices carry key ─── */
+  const registeredDevice = trackedDevices.find((d) => d.isRegistered && d._id);
+  const deviceId = registeredDevice?._id || selected?._id || null;
+
   const handleToggleVisibility = useCallback((key) => {
     setHiddenIds((prev) => {
       const next = new Set(prev);
@@ -172,6 +183,9 @@ export default function LiveTrackingPage() {
   const mapCenter = selected
     ? [selected.latitude, selected.longitude]
     : [25.4610, 68.7183];
+
+  const tileUrl = mapLayer === 'satellite' ? TILES.satellite : TILES.normal;
+  const mapWrapperClass = mapLayer === 'dark' || (isDark && mapLayer === 'normal') ? 'dark-map' : '';
 
   return (
     <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full h-full flex flex-col lg:flex-row overflow-hidden">
@@ -216,7 +230,7 @@ export default function LiveTrackingPage() {
       </div>
 
       {/* Map Area */}
-      <div className="flex-1 relative min-h-[400px] lg:min-h-0">
+      <div className={`flex-1 relative min-h-[400px] lg:min-h-0 ${mapWrapperClass}`}>
         {trackedDevices.length === 0 ? (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center p-6"
@@ -263,9 +277,38 @@ export default function LiveTrackingPage() {
         {/* Map overlays */}
         {trackedDevices.length > 0 && selected && (
           <>
-            {/* Top-right: Selected bus info */}
+            {/* Layer switcher (top-left) */}
             <div
-              className="absolute top-4 right-4 z-[400] rounded-xl px-4 py-3 min-w-[200px] max-w-[260px]"
+              className="absolute bottom-4 left-2 z-[400] flex flex-col gap-1 rounded-xl p-1"
+              style={{
+                backgroundColor: isDark ? 'rgba(24,34,32,0.9)' : 'rgba(255,255,255,0.95)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                boxShadow: cardShadow,
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              {[
+                { key: 'normal', label: 'Map' },
+                { key: 'satellite', label: 'Sat' },
+                { key: 'dark', label: 'Dark' },
+              ].map((layer) => (
+                <button
+                  key={layer.key}
+                  onClick={() => setMapLayer(layer.key)}
+                  className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+                  style={{
+                    backgroundColor: mapLayer === layer.key ? 'var(--accent-primary)' : 'transparent',
+                    color: mapLayer === layer.key ? '#fff' : (isDark ? '#F1EEE4' : '#173B32'),
+                  }}
+                >
+                  {layer.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Top-right: Selected bus info — smaller on mobile */}
+            <div
+              className="absolute top-3 right-3 z-[400] rounded-xl px-3 py-2 w-48 lg:top-4 lg:right-4 lg:px-4 lg:py-3 lg:min-w-[200px] lg:max-w-[260px]"
               style={{
                 backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
                 backdropFilter: 'blur(12px)',

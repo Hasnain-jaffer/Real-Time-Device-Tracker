@@ -20,3 +20,7 @@ export function deleteDevice(id) {
 export function regenerateDeviceKey(id) {
   return apiClient.post(`/devices/${id}/regenerate-key`).then((res) => res.data.device);
 }
+
+export function getNearbyDevices(lat, lng, limit = 5) {
+  return apiClient.get('/devices/nearby', { params: { lat, lng, limit } }).then((res) => res.data.devices);
+}

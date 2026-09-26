@@ -1,7 +1,7 @@
 // client/src/pages/DeviceHistoryPage.jsx
 import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet'; // ← added
+import L from 'leaflet';
 import apiClient from '../lib/apiClient';
 import { useRoutePlayback } from '../features/history/hooks/useRoutePlayback';
 import PlaybackControls from '../features/history/components/PlaybackControls';
@@ -77,6 +77,12 @@ const darkTokens = {
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 
+/* ─── Tile URLs ─── */
+const TILES = {
+  normal: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+};
+
 /* ─── Custom inline-SVG marker (no external assets) ─── */
 function createPlaybackMarker(color) {
   return L.divIcon({
@@ -114,8 +120,12 @@ export default function DeviceHistoryPage() {
   const [selectedDevice, setSelectedDevice] = useState('');
   const [pings, setPings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
 
   const playback = useRoutePlayback(pings);
+
+  const tileUrl = mapLayer === 'satellite' ? TILES.satellite : TILES.normal;
+  const mapWrapperClass = mapLayer === 'dark' || (isDark && mapLayer === 'normal') ? 'dark-map' : '';
 
   /* ─── themed marker icon ─── */
   const playbackIcon = useMemo(
@@ -157,10 +167,14 @@ export default function DeviceHistoryPage() {
 
   const selectedDeviceMeta = devices.find((d) => d._id === selectedDevice);
 
-  const tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-
   return (
-    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8 pb-24 md:pb-6 lg:pb-8">
+      <style>{`
+        .dark-map .leaflet-tile-pane {
+          filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95);
+        }
+      `}</style>
+
       <div className="max-w-6xl mx-auto space-y-5">
 
         {/* Header */}
@@ -264,7 +278,7 @@ export default function DeviceHistoryPage() {
         <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-4">
           {/* Map */}
           <div
-            className="relative rounded-2xl overflow-hidden"
+            className={`relative rounded-2xl overflow-hidden ${mapWrapperClass}`}
             style={{ height: '360px', border: '1px solid var(--border)', boxShadow: cardShadow, backgroundColor: 'var(--bg-page)' }}
           >
             {isLoading ? (
@@ -290,7 +304,7 @@ export default function DeviceHistoryPage() {
                   {playbackPosition && (
                     <Marker
                       position={playbackPosition}
-                      icon={playbackIcon} // ← custom icon applied
+                      icon={playbackIcon}
                     >
                       <Popup>{new Date(playback.currentPing.createdAt).toLocaleTimeString()}</Popup>
                     </Marker>
@@ -298,9 +312,38 @@ export default function DeviceHistoryPage() {
                   <MapSizeFix />
                 </MapContainer>
 
-                {/* Glassmorphism overlay badge */}
+                {/* Layer switcher (bottom-left, clear of zoom controls) */}
                 <div
-                  className="absolute top-3 left-3 text-[11px] font-semibold px-3.5 py-1.5 rounded-full backdrop-blur-md border"
+                  className="absolute bottom-3 left-3 z-[500] flex flex-col gap-1 rounded-xl p-1"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(24,34,32,0.9)' : 'rgba(255,255,255,0.95)',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                    boxShadow: cardShadow,
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  {[
+                    { key: 'normal', label: 'Map' },
+                    { key: 'satellite', label: 'Sat' },
+                    { key: 'dark', label: 'Dark' },
+                  ].map((layer) => (
+                    <button
+                      key={layer.key}
+                      onClick={() => setMapLayer(layer.key)}
+                      className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+                      style={{
+                        backgroundColor: mapLayer === layer.key ? 'var(--accent-primary)' : 'transparent',
+                        color: mapLayer === layer.key ? '#fff' : (isDark ? '#F1EEE4' : '#173B32'),
+                      }}
+                    >
+                      {layer.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Glassmorphism overlay badge (top-right) */}
+                <div
+                  className="absolute top-3 right-3 text-[11px] font-semibold px-3.5 py-1.5 rounded-full backdrop-blur-md border"
                   style={{
                     backgroundColor: isDark ? 'rgba(24,34,32,0.75)' : 'rgba(255,255,255,0.85)',
                     color: isDark ? '#F1EEE4' : '#173B32',

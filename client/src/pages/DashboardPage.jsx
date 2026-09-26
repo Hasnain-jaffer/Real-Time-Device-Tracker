@@ -8,6 +8,7 @@ import { useSocket } from '../app/SocketProvider';
 import { useTheme } from '../app/ThemeContext';
 import apiClient from '../lib/apiClient';
 import MapSizeFix from '../components/map/MapSizeFix';
+import NearbyBusesCard from '../features/devices/components/NearbyBusesCard';
 
 
 /* ─── Inline SVG Icons (no extra deps) ─── */
@@ -47,12 +48,6 @@ const IconBell = ({ size = 18, className = '' }) => (
 const IconChevronRight = ({ size = 16, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
-
-const IconMapPin = ({ size = 18, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
   </svg>
 );
 
@@ -105,6 +100,12 @@ const darkTokens = {
 /* ─── Card shadow helper ─── */
 const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 
+/* ─── Tile URLs ─── */
+const TILES = {
+  normal: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+};
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
@@ -115,8 +116,13 @@ export default function DashboardPage() {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
 
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
+  const isDark = theme === 'dark';
+
+  const tileUrl = mapLayer === 'satellite' ? TILES.satellite : TILES.normal;
+  const mapWrapperClass = mapLayer === 'dark' || (isDark && mapLayer === 'normal') ? 'dark-map' : '';
 
   useEffect(() => {
     apiClient.get('/devices').then(({ data }) => {
@@ -159,8 +165,6 @@ export default function DashboardPage() {
       )
     : [];
 
-  const tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-
   const pulsingIcon = L.divIcon({
     className: '',
     html: `<div class="dash-pulse-marker" style="background:${tokens['--accent-primary']}"></div>`,
@@ -168,7 +172,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8 pb-24 md:pb-6 lg:pb-8">
       <style>{`
         .dash-pulse-marker {
           width: 18px; height: 18px; border-radius: 50%; position: relative;
@@ -180,6 +184,9 @@ export default function DashboardPage() {
         @keyframes dashPulse {
           0% { transform: scale(0.6); opacity: 0.5; }
           100% { transform: scale(2.5); opacity: 0; }
+        }
+        .dark-map .leaflet-tile-pane {
+          filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95);
         }
       `}</style>
 
@@ -349,74 +356,104 @@ export default function DashboardPage() {
             )}
           </div>
 
-         {/* Live map */}
-<div
-  className="relative rounded-2xl overflow-hidden"
-  style={{ height: '300px', border: '1px solid var(--border)', boxShadow: cardShadow }}
->
-  {focused?.lastLocation?.latitude ? (
-    <>
-            <MapContainer
-        key={`map-${focused._id}`}
-        center={[focused.lastLocation.latitude, focused.lastLocation.longitude]}
-        zoom={14}
-        style={{ height: '100%', width: '100%' }}
-        dragging={false}
-        zoomControl={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        touchZoom={false}
-        attributionControl={false}
-      >
-        <TileLayer url={tileUrl} />
-        <Marker
-          position={[focused.lastLocation.latitude, focused.lastLocation.longitude]}
-          icon={pulsingIcon}
-        />
-        <MapSizeFix />
-      </MapContainer>
+          {/* ── Live map ── */}
+          <div
+            className={`relative rounded-2xl overflow-hidden ${mapWrapperClass}`}
+            style={{ height: '300px', border: '1px solid var(--border)', boxShadow: cardShadow }}
+          >
+            {focused?.lastLocation?.latitude ? (
+              <>
+                <MapContainer
+                  key={`map-${focused._id}`}
+                  center={[focused.lastLocation.latitude, focused.lastLocation.longitude]}
+                  zoom={14}
+                  style={{ height: '100%', width: '100%' }}
+                  dragging={false}
+                  zoomControl={false}
+                  scrollWheelZoom={false}
+                  doubleClickZoom={false}
+                  touchZoom={false}
+                  attributionControl={false}
+                >
+                  <TileLayer url={tileUrl} />
+                  <Marker
+                    position={[focused.lastLocation.latitude, focused.lastLocation.longitude]}
+                    icon={pulsingIcon}
+                  />
+                  <MapSizeFix />
+                </MapContainer>
 
-      {/* Overlays */}
-      <div className="absolute top-3 left-3 flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)', color: '#FFFFFF' }}>
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-        </span>
-        {focused.name} live
-      </div>
+                {/* Layer switcher (top-left) */}
+                <div
+                  className="absolute top-3 left-3 z-[500] flex flex-col gap-1 rounded-xl p-1"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(24,34,32,0.9)' : 'rgba(255,255,255,0.95)',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                    boxShadow: cardShadow,
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  {[
+                    { key: 'normal', label: 'Map' },
+                    { key: 'satellite', label: 'Sat' },
+                    { key: 'dark', label: 'Dark' },
+                  ].map((layer) => (
+                    <button
+                      key={layer.key}
+                      onClick={() => setMapLayer(layer.key)}
+                      className="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+                      style={{
+                        backgroundColor: mapLayer === layer.key ? 'var(--accent-primary)' : 'transparent',
+                        color: mapLayer === layer.key ? '#fff' : (isDark ? '#F1EEE4' : '#173B32'),
+                      }}
+                    >
+                      {layer.label}
+                    </button>
+                  ))}
+                </div>
 
-      <div className="absolute bottom-3 left-3 text-[11px] font-medium px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)', color: '#FFFFFF' }}>
-        {focused.lastSeenAt ? `Updated ${new Date(focused.lastSeenAt).toLocaleTimeString()}` : 'Waiting…'}
-      </div>
+                {/* Live badge (top-right) */}
+                <div className="absolute top-3 right-3 flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.45)', color: '#FFFFFF' }}>
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                  </span>
+                  {focused.name} live
+                </div>
 
-      <button
-        onClick={() => navigate('/tracking')}
-        className="absolute bottom-3 right-3 text-xs font-bold px-4 py-2 rounded-xl text-white hover:opacity-90 active:scale-95 transition-all"
-        style={{ backgroundColor: 'var(--accent-primary)' }}
-      >
-        Open live tracking
-      </button>
-    </>
-  ) : (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-      <IconMapEmpty size={36} style={{ color: 'var(--text-muted)' }} />
-      <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>No live position yet</p>
-    </div>
-  )}
-</div>
+                {/* Updated pill */}
+                <div className="absolute bottom-3 left-3 text-[11px] font-medium px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.45)', color: '#FFFFFF' }}>
+                  {focused.lastSeenAt ? `Updated ${new Date(focused.lastSeenAt).toLocaleTimeString()}` : 'Waiting…'}
+                </div>
+
+                <button
+                  onClick={() => navigate('/tracking')}
+                  className="absolute bottom-3 right-3 text-xs font-bold px-4 py-2 rounded-xl text-white hover:opacity-90 active:scale-95 transition-all"
+                  style={{ backgroundColor: 'var(--accent-primary)' }}
+                >
+                  Open live tracking
+                </button>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                <IconMapEmpty size={36} style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>No live position yet</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ═══════════════════════════════════════
             4. FOOTER ROW
            ═══════════════════════════════════════ */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          
+
           {/* Live right now */}
           <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}>
             <p className="text-[11px] font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>Live right now</p>
-            
+
             {devices.filter((d) => d.status === 'online').length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center py-8">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ backgroundColor: 'var(--bg-page)' }}>
@@ -444,6 +481,8 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
+
+          <NearbyBusesCard tokens={tokens} />
 
           {/* Service alerts */}
           <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}>

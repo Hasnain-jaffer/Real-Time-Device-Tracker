@@ -86,6 +86,48 @@ export async function createGeofence(req, res, next) {
   }
 }
 
+export async function createGeofencesBulk(req, res, next) {
+  try {
+    const stops = req.body; // expects an array
+    if (!Array.isArray(stops) || stops.length === 0) {
+      return res.status(400).json({ message: 'Request body must be a non-empty array of stops' });
+    }
+
+    const routeId = stops[0].routeId;
+    if (!routeId) {
+      return res.status(400).json({ message: 'Each stop must include a routeId' });
+    }
+
+    const lastStop = await Geofence.findOne({ routeId }).sort({ order: -1 });
+    let nextOrder = lastStop ? lastStop.order + 1 : 0;
+
+    const docs = stops.map((s) => {
+      if (!s.name || s.latitude == null || s.longitude == null) {
+        throw new Error(`Stop "${s.name || '(unnamed)'}" is missing name, latitude, or longitude`);
+      }
+      return {
+        ownerId: req.user.id,
+        name: s.name,
+        type: s.type || 'stop',
+        latitude: s.latitude,
+        longitude: s.longitude,
+        radiusMeters: s.radiusMeters || 100,
+        color: s.color || '#5E8C61',
+        routeId: s.routeId,
+        order: nextOrder++,
+      };
+    });
+
+    const created = await Geofence.insertMany(docs);
+    res.status(201).json({ geofences: created });
+  } catch (err) {
+    if (err.message.includes('missing name')) {
+      return res.status(400).json({ message: err.message });
+    }
+    next(err);
+  }
+}
+
 export async function updateGeofence(req, res, next) {
   try {
     const update = {};

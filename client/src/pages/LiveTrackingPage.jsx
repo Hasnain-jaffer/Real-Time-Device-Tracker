@@ -304,38 +304,7 @@ export default function LiveTrackingPage() {
                 </div>
               </div>
             </div>
-
-            {/* Bottom-left: Action chips */}
-            <div className="absolute bottom-4 left-4 z-[400] flex items-center gap-2">
-              <button
-                onClick={() => selected?._id && navigate(`/devices/${selected._id}/history`)}
-                className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition hover:opacity-90 active:scale-95"
-                style={{
-                  backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
-                  color: isDark ? '#F1EEE4' : '#173B32',
-                  backdropFilter: 'blur(12px)',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                }}
-              >
-                <IconHistory size={13} />
-                History
-              </button>
-              <button
-                onClick={() => selected?._id && navigate(`/routes/${selected.routeId}`)}
-                className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition hover:opacity-90 active:scale-95"
-                style={{
-                  backgroundColor: isDark ? 'rgba(24,34,32,0.85)' : 'rgba(255,255,255,0.9)',
-                  color: isDark ? '#F1EEE4' : '#173B32',
-                  backdropFilter: 'blur(12px)',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                }}
-              >
-                <IconStops size={13} />
-                Route
-              </button>
-            </div>
+            
           </>
         )}
       </div>

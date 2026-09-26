@@ -6,6 +6,7 @@ import {
   updateGeofence,
   deleteGeofence,
   getDeviceRoute,
+  createGeofencesBulk,
 } from '../controllers/geofence.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
@@ -16,6 +17,7 @@ router.use(authenticate);
 router.get('/', listGeofences);
 router.get('/device/:deviceId/route', getDeviceRoute);
 
+router.post('/bulk', authorize('admin'), createGeofencesBulk);
 router.post('/', authorize('admin'), createGeofence);
 router.patch('/:id', authorize('admin'), updateGeofence);
 router.delete('/:id', authorize('admin'), deleteGeofence);

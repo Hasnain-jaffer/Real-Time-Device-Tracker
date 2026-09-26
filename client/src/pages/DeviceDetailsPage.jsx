@@ -6,6 +6,7 @@ import MiniTimeline from '../features/devices/components/MiniTimeline';
 import ScheduleTable from '../features/devices/components/ScheduleTable';
 import DeviceHealthPanel from '../features/devices/components/DeviceHealthPanel';
 import { useTheme } from '../app/ThemeContext';
+import { useAuth } from '../app/AuthContext';
 
 /* ─── SVG Icons ─── */
 const IconBus = ({ size = 22 }) => (
@@ -55,6 +56,7 @@ export default function DeviceDetailsPage() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
+  const isAdmin = useAuth().user?.role === 'admin';
 
   const { device, recentPings, notifications, isLoading, error } = useDeviceDetails(id);
   const { stops: scheduleStops, isLoading: scheduleLoading } = useDeviceSchedule(device?._id);
@@ -184,27 +186,26 @@ export default function DeviceDetailsPage() {
             >
               Full history
             </Link>
-            <Link
-              to={`/devices/${device._id}/route`}
-              className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
-              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              View Route
-            </Link>
-            <Link
-              to={`/devices/${device._id}/stops`}
-              className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
-              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              View stops
-            </Link>
-            <Link
-              to="/devices"
-              className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
-              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              Manage device
-            </Link>
+            {device.routeId ? (
+  <Link
+    to={`/routes/${device.routeId}`}
+    className="rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+  >
+    View Route
+  </Link>
+) : (
+  <span className="rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-2 text-xs font-medium text-gray-400 cursor-not-allowed">
+    No route assigned
+  </span>
+)}
+{isAdmin && (
+  <Link
+    to="/devices"
+    className="rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+  >
+    Manage Device
+  </Link>
+)}
           </div>
         </div>
 

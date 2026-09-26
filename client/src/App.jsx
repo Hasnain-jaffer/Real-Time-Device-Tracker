@@ -21,7 +21,6 @@ const DeviceCenterPage = lazy(() => import('./pages/DeviceCenterPage'));
 const DeviceDetailsPage = lazy(() => import('./pages/DeviceDetailsPage'));
 const LiveTrackingPage = lazy(() => import('./pages/LiveTrackingPage'));
 const DeviceHistoryPage = lazy(() => import('./pages/DeviceHistoryPage'));
-const DeviceStopsPage = lazy(() => import('./pages/DeviceStopsPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -33,7 +32,6 @@ const AboutPage = lazy(() => import('./pages/static/AboutPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/static/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/static/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/static/NotFoundPage'));
-const DeviceRoutePage = lazy(() => import('./pages/DeviceRoutePage'));
 const RouteDetailsPage = lazy(() => import('./pages/RouteDetailsPage'));
 
 
@@ -128,8 +126,6 @@ export default function App() {
                 <Route path="/devices/:id" element={<Protected><DeviceDetailsPage /></Protected>} />
                 <Route path="/tracking" element={<Protected><LiveTrackingPage /></Protected>} />
                 <Route path="/history" element={<Protected><DeviceHistoryPage /></Protected>} />
-                <Route path="/devices/:id/stops" element={<Protected><DeviceStopsPage /></Protected>} />
-                <Route path="/devices/:id/route" element={<Protected><DeviceRoutePage /></Protected>} />
                 <Route path="/routes/:routeId" element={<Protected><RouteDetailsPage /></Protected>} />
                 <Route
                   path="/analytics"

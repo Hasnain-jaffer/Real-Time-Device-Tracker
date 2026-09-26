@@ -18,12 +18,12 @@ const IconBus = ({ size = 16, className = '', style = {} }) => (
     className={className}
     style={style}
   >
-    <rect x="3" y="6" width="18" height="12" rx="2" />
-    <path d="M6 18v2" />
-    <path d="M18 18v2" />
-    <path d="M6 10h12" />
-    <circle cx="7.5" cy="18" r="0.5" fill="currentColor" />
-    <circle cx="16.5" cy="18" r="0.5" fill="currentColor" />
+    <path d="M8 6v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <path d="M16 15a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2" />
+    <path d="M4 10h16v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5z" />
+    <path d="M6 17v3" />
+    <path d="M18 17v3" />
+    <path d="M6 10V6h12v4" />
   </svg>
 );
 
@@ -102,7 +102,7 @@ export default function NearbyBusesCard({ tokens }) {
             color: 'var(--accent-primary)',
           }}
         >
-          <IconBus size={14} />
+          <IconBus size={14} style={{ backgroundColor: 'var(--bg-page)' }} />
         </div>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           Buses near you
@@ -143,7 +143,7 @@ export default function NearbyBusesCard({ tokens }) {
               color: 'var(--text-muted)',
             }}
           >
-            <IconBus size={18} />
+            <IconBus size={18} style={{ backgroundColor: 'var(--bg-page)' }} />
           </div>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             No buses currently online nearby.
@@ -178,9 +178,10 @@ export default function NearbyBusesCard({ tokens }) {
                   style={{
                     backgroundColor: 'var(--accent-primary)' + '15',
                     color: 'var(--accent-primary)',
+                    border: '1px solid var(--border)',
                   }}
                 >
-                  <IconBus size={14} />
+                  <IconBus size={14} style={{ backgroundColor: 'var(--bg-page)' }} />
                 </span>
                 <span className="text-sm font-medium truncate">{bus.name}</span>
               </span>

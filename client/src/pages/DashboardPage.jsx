@@ -10,7 +10,6 @@ import apiClient from '../lib/apiClient';
 import MapSizeFix from '../components/map/MapSizeFix';
 import NearbyBusesCard from '../features/devices/components/NearbyBusesCard';
 
-
 /* ─── Inline SVG Icons (no extra deps) ─── */
 const IconBus = ({ size = 18, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -464,7 +463,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-1">
                 {devices.filter((d) => d.status === 'online').slice(0, 5).map((d) => (
-                  <div key={d._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-black/[0.03] transition-colors cursor-pointer"
+                  <div key={d._id} className="flex items-center justify-between p-3 rounded-xl border border-transparent hover:bg-[var(--bg-page)] hover:border-[var(--border)] transition-all cursor-pointer"
                     onClick={() => setFocused(d)}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--badge-success-bg)' }}>

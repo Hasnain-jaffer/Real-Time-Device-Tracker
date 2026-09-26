@@ -111,8 +111,6 @@ const IconMap = ({ size = 18, className = '' }) => (
   </svg>
 );
 
-
-
 /* ═══════════════════════════════════════════
    NAV CONFIG
    ═══════════════════════════════════════════ */
@@ -291,12 +289,11 @@ export default function Navbar() {
       </button>
 
       {/* User */}
-    {/* User */}
-<div
-  onClick={() => { onNavigate?.(); navigate('/profile'); }}
-  className="flex items-center gap-2.5 px-3 pt-3 pb-1 mt-3 border-t cursor-pointer hover:bg-white/[0.04] rounded-lg transition-colors"
-  style={{ borderColor: 'var(--border)' }}
->
+      <div
+        onClick={() => { onNavigate?.(); navigate('/profile'); }}
+        className="flex items-center gap-2.5 px-3 pt-3 pb-1 mt-3 border-t cursor-pointer hover:bg-white/[0.04] rounded-lg transition-colors"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <span
           className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
           style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
@@ -355,7 +352,7 @@ export default function Navbar() {
           MOBILE / TABLET HEADER
          ═══════════════════════════════════════ */}
       <header
-        className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-40"
+        className="lg:hidden flex items-center justify-between px-4 py-3 relative flex-shrink-0 z-40"
         style={{ ...tokens, backgroundColor: 'var(--bg-sidebar)' }}
       >
         <div className="flex items-center gap-2">

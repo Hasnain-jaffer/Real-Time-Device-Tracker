@@ -188,7 +188,7 @@ export default function LiveTrackingPage() {
   const mapWrapperClass = mapLayer === 'dark' || (isDark && mapLayer === 'normal') ? 'dark-map' : '';
 
   return (
-    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full h-full flex flex-col lg:flex-row overflow-hidden">
+    <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full min-h-full flex flex-col lg:h-full lg:min-h-0 lg:flex-row lg:overflow-hidden">
       
       {/* Sidebar */}
       <div
@@ -206,7 +206,7 @@ export default function LiveTrackingPage() {
         </div>
 
         {/* Panel */}
-        <div className="flex-1 overflow-hidden p-3">
+        <div className="flex-1 overflow-y-auto min-h-0 p-3">
           <TrackingPanel
             devices={trackedDevices}
             hiddenIds={hiddenIds}

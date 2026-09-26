@@ -3,9 +3,9 @@ import Navbar from './Navbar';
 
 export default function AppLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-dvh flex flex-col overflow-hidden">
       <Navbar />
-      <main className="flex-1 flex flex-col lg:pl-[240px] pb-16 md:pb-0">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain relative isolate pb-16 md:pb-0 lg:pl-[240px]">
         {children}
       </main>
     </div>

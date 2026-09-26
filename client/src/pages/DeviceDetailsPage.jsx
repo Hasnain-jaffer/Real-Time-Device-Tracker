@@ -189,8 +189,9 @@ export default function DeviceDetailsPage() {
             {device.routeId ? (
   <Link
     to={`/routes/${device.routeId}`}
-    className="rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-  >
+    className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
     View Route
   </Link>
 ) : (
@@ -201,8 +202,9 @@ export default function DeviceDetailsPage() {
 {isAdmin && (
   <Link
     to="/devices"
-    className="rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-  >
+    className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
     Manage Device
   </Link>
 )}

@@ -7,7 +7,7 @@ import {
   updateDevice,
   deleteDevice,
   regenerateDeviceKey,
-  getNearbyDevices 
+  getNearbyDevices,
 } from '../controllers/device.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 

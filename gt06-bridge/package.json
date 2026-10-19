@@ -1,0 +1,17 @@
+{
+  "name": "gt06-bridge",
+  "version": "1.0.0",
+  "description": "GT06/TK103 TCP-to-Socket.IO bridge for My Campus Ride",
+  "type": "module",
+  "main": "bridge.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node bridge.js",
+    "test-tracker": "node testTracker.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.5",
+    "socket.io-client": "^4.8.1"
+  }
+}

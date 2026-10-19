@@ -31,10 +31,10 @@ const deviceSchema = new mongoose.Schema(
       required: true,
       unique: true,
       index: true,
+      select: false, // never returned by default; admin endpoints request it with .select('+deviceKey')
     },
-        imei: {
+    imei: {
       type: String,
-      default: null,
       unique: true,
       sparse: true, // allows many devices to have imei: null without violating uniqueness
       index: true,

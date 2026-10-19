@@ -24,6 +24,7 @@ import searchRoutes from './src/routes/search.routes.js';
 import scheduleRoutes from './src/routes/schedule.routes.js';
 import { startGt06Server } from './src/tcp/gt06Server.js';
 import routeRoutes from './src/routes/route.routes.js';
+import bridgeRoutes from './src/routes/bridge.routes.js'; // NEW
 
 const app = express();
 app.set('trust proxy', 1); // required on Render/behind a reverse proxy for secure cookies + accurate IPs
@@ -58,6 +59,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/profile', profileRoutes); 
 // --- Device routes ---
 app.use('/api/devices', deviceRoutes);
+// --- Bridge routes (secret-protected, used only by the gt06-bridge VM) ---
+app.use('/api/bridge', bridgeRoutes); // NEW
 // --- Geofence routes ---
 app.use('/api/geofences', geofenceRoutes);
 // --- Analytics routes ---

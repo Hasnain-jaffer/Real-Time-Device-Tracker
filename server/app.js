@@ -24,7 +24,8 @@ import searchRoutes from './src/routes/search.routes.js';
 import scheduleRoutes from './src/routes/schedule.routes.js';
 import { startGt06Server } from './src/tcp/gt06Server.js';
 import routeRoutes from './src/routes/route.routes.js';
-import bridgeRoutes from './src/routes/bridge.routes.js'; // NEW
+import bridgeRoutes from './src/routes/bridge.routes.js'; 
+import aiRoutes from './src/routes/ai.routes.js';
 
 const app = express();
 app.set('trust proxy', 1); // required on Render/behind a reverse proxy for secure cookies + accurate IPs
@@ -73,6 +74,8 @@ app.use('/api/search', searchRoutes);
 app.use('/api/schedule', scheduleRoutes);
 // --- Route routes ---
 app.use('/api/routes', routeRoutes);
+// --- AI routes ---
+app.use('/api/ai', aiRoutes);
 
 // --- Socket handlers (existing V1 logic, unchanged) ---
 registerLocationHandlers(io);

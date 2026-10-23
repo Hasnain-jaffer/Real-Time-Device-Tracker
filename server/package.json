@@ -10,19 +10,20 @@
     "test": "node src/tcp/testGt06Client.js"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3",
-    "mongoose": "^8.9.0",
-    "dotenv": "^16.4.5",
-    "jsonwebtoken": "^9.0.2",
+    "@google/genai": "^2.31.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "helmet": "^8.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
     "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.0",
     "morgan": "^1.10.0",
-    "zod": "^3.24.1",
-    "resend": "^4.0.1"
+    "resend": "^4.0.1",
+    "socket.io": "^4.8.3",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

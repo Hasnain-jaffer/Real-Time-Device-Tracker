@@ -9,6 +9,7 @@ import { useTheme } from '../app/ThemeContext';
 import apiClient from '../lib/apiClient';
 import MapSizeFix from '../components/map/MapSizeFix';
 import NearbyBusesCard from '../features/devices/components/NearbyBusesCard';
+import AskBar from '../features/ai/components/AskBar';
 
 /* ─── Inline SVG Icons (no extra deps) ─── */
 const IconBus = ({ size = 18, className = '' }) => (
@@ -259,6 +260,13 @@ export default function DashboardPage() {
               )}
             </button>
           </div>
+        </div>
+
+        {/* ═══════════════════════════════════════
+            1b. ASK THE ASSISTANT
+           ═══════════════════════════════════════ */}
+        <div className="max-w-3xl">
+          <AskBar />
         </div>
 
         {/* ═══════════════════════════════════════

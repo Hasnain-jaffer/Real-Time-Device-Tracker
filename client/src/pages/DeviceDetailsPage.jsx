@@ -7,6 +7,7 @@ import ScheduleTable from '../features/devices/components/ScheduleTable';
 import DeviceHealthPanel from '../features/devices/components/DeviceHealthPanel';
 import { useTheme } from '../app/ThemeContext';
 import { useAuth } from '../app/AuthContext';
+import DelayNoteCard from '../features/ai/components/DelayNoteCard';
 
 /* ─── SVG Icons ─── */
 const IconBus = ({ size = 22 }) => (
@@ -210,6 +211,7 @@ export default function DeviceDetailsPage() {
 )}
           </div>
         </div>
+        <DelayNoteCard deviceId={device._id} />
 
         {/* Route schedule */}
         <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}>

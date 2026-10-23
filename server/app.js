@@ -1,5 +1,6 @@
 import dns from 'dns'; // Set DNS servers to Google's public DNS servers
 dns.setServers(['8.8.8.8', '8.8.4.4']); 
+process.env.TZ = process.env.TZ || 'Asia/Karachi'; // delay.service.js uses server-local time; Render defaults to UTC
 
 // server/app.js
 import 'dotenv/config';

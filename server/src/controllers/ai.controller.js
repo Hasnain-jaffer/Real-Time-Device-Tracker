@@ -1,8 +1,10 @@
 // server/src/controllers/ai.controller.js
+import mongoose from 'mongoose';
 import Route from '../models/route.model.js';
 import Geofence from '../models/geofence.model.js';
 import Device from '../models/device.model.js';
-import { isGeminiConfigured, matchRoutesToQuery } from '../services/gemini.service.js';
+import { isGeminiConfigured, matchRoutesToQuery, explainDelay } from '../services/gemini.service.js';
+import { computeDelayMetrics } from '../services/aiMetrics.service.js';
 import { getCached, setCached } from '../services/aiCache.service.js';
 import {
   MAX_QUERY_LENGTH,
@@ -12,6 +14,12 @@ import {
   pickValidIds,
   fallbackMatch,
 } from '../utils/aiSearch.util.js';
+import {
+  DELAY_NOTE_THRESHOLD_MINUTES,
+  MAX_REASONABLE_DELAY_MINUTES,
+  buildFallbackNote,
+  isGroundedNote,
+} from '../utils/delayNote.util.js';
 
 export async function searchRoutes(req, res, next) {
   try {
@@ -67,6 +75,59 @@ export async function searchRoutes(req, res, next) {
 
     console.log('[ai-search]', JSON.stringify({ q: query, source, fromCache, matched: matchedRoutes.length, ms: Date.now() - started }));
     res.json({ matchedRoutes, source, fromCache });
+  } catch (err) {
+    next(err);
+  }
+}
+
+const DELAY_NOTE_TTL_MS = 2 * 60 * 1000;
+
+export async function getDelayNote(req, res, next) {
+  try {
+    const { deviceId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(deviceId)) {
+      return res.status(400).json({ message: 'Invalid device id' });
+    }
+
+    const cacheKey = `ai-delay:${deviceId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return res.json({ ...cached, fromCache: true });
+
+    const metrics = await computeDelayMetrics(deviceId);
+    const worthExplaining =
+      metrics &&
+      metrics.delayMinutes >= DELAY_NOTE_THRESHOLD_MINUTES &&
+      metrics.delayMinutes <= MAX_REASONABLE_DELAY_MINUTES;
+
+    if (!worthExplaining) {
+      const empty = { note: null };
+      setCached(cacheKey, empty, DELAY_NOTE_TTL_MS);
+      return res.json(empty);
+    }
+
+    let note = null;
+    let source = 'ai';
+    if (isGeminiConfigured()) {
+      try {
+        const candidate = await explainDelay(metrics);
+        // The prompt asks for grounded text; this check enforces it
+        if (isGroundedNote(candidate, metrics)) {
+          note = candidate.trim();
+        } else {
+          console.warn('[ai-delay] Gemini note rejected (number, cause or length check), using template');
+        }
+      } catch (err) {
+        console.warn('[ai-delay] Gemini failed, using template:', err.message);
+      }
+    }
+    if (!note) {
+      note = buildFallbackNote(metrics);
+      source = 'template';
+    }
+
+    const response = { note, source, metrics };
+    setCached(cacheKey, response, DELAY_NOTE_TTL_MS);
+    res.json(response);
   } catch (err) {
     next(err);
   }

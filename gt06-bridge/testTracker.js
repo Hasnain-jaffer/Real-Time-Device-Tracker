@@ -2,10 +2,11 @@
 // Simulated GT06 tracker for testing the TCP bridge (or the in-process server) without
 // real hardware.
 //
-// Usage:  node testTracker.js [host] [port] [imei]
+// Usage:  node testTracker.js [host] [port] [imei] [lat] [lng]
 //   e.g.  node testTracker.js localhost 5024 123456789012345
 //         node testTracker.js 13.234.10.20 5023 123456789012345
-// Defaults: host=localhost, port=5023, imei=0123456789012345
+//         node testTracker.js localhost 5024 123456789012345 25.4612 68.7155   (start at a stop's coordinates)
+// Defaults: host=localhost, port=5023, imei=0123456789012345, lat/lng=25.461/68.7183
 // (env vars GT06_HOST, GT06_TCP_PORT, TEST_IMEI also work)
 //
 // Sends a login packet, waits for the server's ACK, then sends a location packet
@@ -14,10 +15,13 @@
 
 import net from 'net';
 
-const [, , argHost, argPort, argImei] = process.argv;
+const [, , argHost, argPort, argImei, argLat, argLng] = process.argv;
 const HOST = argHost || process.env.GT06_HOST || 'localhost';
 const PORT = Number(argPort || process.env.GT06_TCP_PORT || 5023);
 const TEST_IMEI = argImei || process.env.TEST_IMEI || '0123456789012345'; // must match the imei of a Device in your DB
+const START_LAT = Number(argLat) || 25.461;
+const START_LNG = Number(argLng) || 68.7183;
+const DRIFT = 0.0001; // about 11 m per step, so a bus placed on a stop stays inside its geofence
 
 function crc16Itu(buffer) {
   let fcs = 0xffff;
@@ -96,8 +100,8 @@ function buildLocationPacket(latitude, longitude, speedKmh) {
   return buildPacket(0x12, body);
 }
 
-let lat = 25.461;
-let lng = 68.7183;
+let lat = START_LAT;
+let lng = START_LNG;
 let started = false;
 let locationTimer = null;
 let heartbeatTimer = null;
@@ -114,8 +118,8 @@ socket.on('data', (data) => {
   started = true; // the first ACK is the login ACK: the server accepted us, start reporting
 
   locationTimer = setInterval(() => {
-    lat += (Math.random() - 0.5) * 0.0005;
-    lng += (Math.random() - 0.5) * 0.0005;
+    lat += (Math.random() - 0.5) * DRIFT;
+    lng += (Math.random() - 0.5) * DRIFT;
     const speed = Math.floor(Math.random() * 40);
     console.log(`[test-tracker] Sending location: ${lat.toFixed(6)}, ${lng.toFixed(6)} @ ${speed} km/h`);
     socket.write(buildLocationPacket(lat, lng, speed));
@@ -127,7 +131,14 @@ socket.on('data', (data) => {
   }, 30000);
 });
 
-socket.on('error', (err) => console.error('[test-tracker] Error:', err.message));
+socket.on('error', (err) => {
+  // Node 18+ may report a refused connection as an AggregateError with an empty message (IPv6 + IPv4 attempts)
+  const parts = err.errors ? err.errors.map((e) => `${e.code} ${e.address}:${e.port}`) : [err.code || err.message || String(err)];
+  console.error(`[test-tracker] Error: ${parts.join(', ')}`);
+  if (parts.some((p) => p.includes('ECONNREFUSED'))) {
+    console.error(`[test-tracker] Nothing is listening on ${HOST}:${PORT}. Start the bridge (or the server) first, or check the port number.`);
+  }
+});
 socket.on('close', () => {
   console.log('[test-tracker] Connection closed');
   clearInterval(locationTimer);

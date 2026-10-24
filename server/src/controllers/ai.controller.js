@@ -1,9 +1,8 @@
-// server/src/controllers/ai.controller.js
 import mongoose from 'mongoose';
 import Route from '../models/route.model.js';
 import Geofence from '../models/geofence.model.js';
 import Device from '../models/device.model.js';
-import { isGeminiConfigured, matchRoutesToQuery, explainDelay } from '../services/gemini.service.js';
+import { isGeminiConfigured, matchTransitQuery, explainDelay } from '../services/gemini.service.js';
 import { computeDelayMetrics } from '../services/aiMetrics.service.js';
 import { getCached, setCached } from '../services/aiCache.service.js';
 import {
@@ -32,12 +31,13 @@ export async function searchRoutes(req, res, next) {
     const [routes, stops, buses] = await Promise.all([
       Route.find({ isActive: true }).select('_id name color'),
       Geofence.find({ isActive: true, routeId: { $ne: null } }).select('name routeId order'),
-      Device.find({ routeId: { $ne: null } }).select('name status routeId'), // deviceKey is select:false in the schema
+      Device.find().select('name identifier status routeId'), // deviceKey is select:false in the schema
     ]);
 
     const context = buildContext(routes, stops, buses);
-    if (context.length === 0) {
-      return res.json({ matchedRoutes: [], source: 'none' });
+    const unassignedBuses = buses.filter((b) => !b.routeId);
+    if (context.length === 0 && unassignedBuses.length === 0) {
+      return res.json({ routes: [], stops: [], buses: [], source: 'none' });
     }
 
     const started = Date.now();
@@ -46,16 +46,16 @@ export async function searchRoutes(req, res, next) {
     let source = 'ai';
     let fromCache = false;
 
-    // Only the matched ids are cached, never bus status, so the response is always decorated with fresh data
+    // Only ids are cached, never names/status, so the response is always decorated with fresh data
     const cachedIds = getCached(cacheKey);
     if (cachedIds) {
-      ids = pickValidIds(cachedIds, context);
+      ids = pickValidIds(cachedIds, context, unassignedBuses);
       fromCache = true;
     } else if (isGeminiConfigured()) {
       try {
-        const suggested = await matchRoutesToQuery(query, toModelContext(context));
-        // Validate against the real data: an id the model made up is dropped here, whatever the prompt said
-        ids = pickValidIds(suggested, context);
+        const suggested = await matchTransitQuery(query, toModelContext(context, unassignedBuses));
+        // An id the model made up is dropped here, whatever the prompt said
+        ids = pickValidIds(suggested, context, unassignedBuses);
         setCached(cacheKey, ids);
       } catch (err) {
         console.warn('[ai-search] Gemini failed, using text match:', err.message);
@@ -63,18 +63,52 @@ export async function searchRoutes(req, res, next) {
     }
 
     if (!ids) {
-      ids = fallbackMatch(query, context);
+      ids = fallbackMatch(query, context, unassignedBuses);
       source = 'text';
     }
 
-    const byId = new Map(context.map((c) => [c.routeId, c]));
-    const matchedRoutes = ids.map((id) => {
-      const c = byId.get(id);
-      return { _id: c.routeId, name: c.name, color: c.color, stops: c.stops, buses: c.buses };
-    });
+    // Decorate with fresh data
+    const routeById = new Map(context.map((c) => [c.routeId, c]));
+    const allStops = context.flatMap((c) => c.stops.map((s) => ({ ...s, routeId: c.routeId, routeName: c.name })));
+    const stopById = new Map(allStops.map((s) => [s.stopId, s]));
+    const allBuses = [
+      ...context.flatMap((c) => c.buses.map((b) => ({ ...b, routeId: c.routeId, routeName: c.name }))),
+      ...unassignedBuses.map((b) => ({
+        busId: b._id.toString(), name: b.name, identifier: b.identifier, status: b.status, routeId: null, routeName: '',
+      })),
+    ];
+    const busById = new Map(allBuses.map((b) => [b.busId, b]));
 
-    console.log('[ai-search]', JSON.stringify({ q: query, source, fromCache, matched: matchedRoutes.length, ms: Date.now() - started }));
-    res.json({ matchedRoutes, source, fromCache });
+    const matchedStops = ids.stopIds.map((id) => stopById.get(id)).filter(Boolean);
+    const matchedBuses = ids.busIds.map((id) => busById.get(id)).filter(Boolean);
+
+    // Include the parent route of any matched stop or bus so the student can open it
+    const routeIdSet = new Set(ids.routeIds.filter((id) => routeById.has(id)));
+    matchedStops.forEach((s) => routeIdSet.add(s.routeId));
+    matchedBuses.forEach((b) => b.routeId && routeIdSet.add(b.routeId));
+
+    const response = {
+      routes: [...routeIdSet].map((id) => routeById.get(id)).filter(Boolean).map((c) => ({
+        _id: c.routeId,
+        name: c.name,
+        color: c.color,
+        stops: c.stops.map((s) => s.name),
+        buses: c.buses.map((b) => ({ _id: b.busId, name: b.name, status: b.status })),
+      })),
+      stops: matchedStops.map((s) => ({ _id: s.stopId, name: s.name, routeId: s.routeId, routeName: s.routeName })),
+      buses: matchedBuses.map((b) => ({
+        _id: b.busId, name: b.name, identifier: b.identifier, status: b.status, routeId: b.routeId,
+      })),
+      source,
+      fromCache,
+    };
+
+    console.log('[ai-search]', JSON.stringify({
+      q: query, source, fromCache,
+      routes: response.routes.length, stops: response.stops.length, buses: response.buses.length,
+      ms: Date.now() - started,
+    }));
+    res.json(response);
   } catch (err) {
     next(err);
   }

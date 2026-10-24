@@ -1,4 +1,3 @@
-// server/src/routes/ai.routes.js
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { searchRoutes, getDelayNote } from '../controllers/ai.controller.js';

@@ -130,6 +130,8 @@ const server = net.createServer((tcpSocket) => {
     }
 
     if (parsed.protocol === PROTOCOL.HEARTBEAT) {
+      // A parked bus sends only heartbeats; tell the backend it is alive so its offline watchdog does not flag it
+      if (session?.ioSocket?.connected) session.ioSocket.emit('device-heartbeat');
       tcpSocket.write(buildAck(parsed.protocol, parsed.serial));
       return;
     }

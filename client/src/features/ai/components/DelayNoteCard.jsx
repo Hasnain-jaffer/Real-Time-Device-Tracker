@@ -1,10 +1,6 @@
-// client/src/features/ai/components/DelayNoteCard.jsx
 import { useEffect, useState } from 'react';
 import { getDelayNote } from '../api/aiApi';
 
-/* ═══════════════════════════════════════════
-   INLINE SVG ICONS — no extra deps
-   ═══════════════════════════════════════════ */
 const IconClock = ({ size = 18, className = '', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -24,8 +20,8 @@ const IconChevronDown = ({ size = 18, className = '', style }) => (
   </svg>
 );
 
-/* The page that renders this card already defines these CSS variables through its light/dark
-   token object; the fallbacks keep the card readable if a variable is missing. */
+/* The page that renders this card defines these CSS variables via its light/dark token object;
+   the fallbacks keep the card readable if a variable is missing. */
 const C = {
   surface: 'var(--bg-surface, #FFFFFF)',
   border: 'var(--border, #E1D9C8)',
@@ -38,9 +34,6 @@ const C = {
 
 const REFRESH_MS = 2 * 60 * 1000; // matches the server cache, so a bus that becomes late shows up without a reload
 
-/* ═══════════════════════════════════════════
-   VIEW (exported so it can be reused / tested)
-   ═══════════════════════════════════════════ */
 export function DelayNoteView({ data }) {
   const [showData, setShowData] = useState(false);
   if (!data || !data.note) return null;
@@ -92,9 +85,7 @@ export function DelayNoteView({ data }) {
   );
 }
 
-/* ═══════════════════════════════════════════
-   CARD (fetches; renders nothing when there is no significant delay)
-   ═══════════════════════════════════════════ */
+/** Fetches the note; renders nothing when there is no significant delay. */
 export default function DelayNoteCard({ deviceId }) {
   const [data, setData] = useState(null);
 
@@ -113,8 +104,6 @@ export default function DelayNoteCard({ deviceId }) {
     const interval = setInterval(load, REFRESH_MS);
     return () => { cancelled = true; clearInterval(interval); };
   }, [deviceId]);
-
-  if (!data) return null;
 
   return <DelayNoteView data={data} />;
 }

@@ -1,12 +1,9 @@
-// client/src/features/ai/components/AskBar.jsx
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../../app/ThemeContext';
 import { searchRoutesAI } from '../api/aiApi';
 
-/* ═══════════════════════════════════════════
-   INLINE SVG ICONS — no extra deps
-   ═══════════════════════════════════════════ */
+/* ═══════════ INLINE SVG ICONS — no extra deps, no emojis ═══════════ */
 const IconSparkle = ({ size = 18, className = '', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
@@ -38,9 +35,15 @@ const IconBus = ({ size = 18, className = '', style }) => (
   </svg>
 );
 
-const IconArrowRight = ({ size = 18, className = '', style }) => (
+const IconMapPin = ({ size = 18, className = '', style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const IconRoute = ({ size = 18, className = '', style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" /><path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H12" />
   </svg>
 );
 
@@ -50,9 +53,7 @@ const IconAlert = ({ size = 18, className = '', style }) => (
   </svg>
 );
 
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS (Forest & Sand)
-   ═══════════════════════════════════════════ */
+/* ═══════════ DESIGN TOKENS (Forest & Sand) ═══════════ */
 const lightTokens = {
   '--ask-surface': '#FFFFFF',
   '--ask-border': '#E1D9C8',
@@ -86,18 +87,34 @@ function errorMessageFor(err) {
   return 'Could not search right now. Please try again.';
 }
 
-/* ═══════════════════════════════════════════
-   RESULTS LIST (exported so it can be reused / tested)
-   ═══════════════════════════════════════════ */
+function StatusDot({ status }) {
+  const online = status === 'online';
+  return (
+    <span
+      className="w-1.5 h-1.5 rounded-full inline-block"
+      style={{ backgroundColor: online ? 'var(--ask-accent)' : 'var(--ask-muted)' }}
+      title={online ? 'online' : 'offline'}
+    />
+  );
+}
+
+/* ═══════════ RESULTS (exported so it can be reused / tested) ═══════════ */
 export function AskResults({ result }) {
-  const routes = result?.matchedRoutes || [];
+  const routes = result?.routes || [];
+  const stops = result?.stops || [];
+  const buses = result?.buses || [];
   const isText = result?.source === 'text';
+  const total = routes.length + stops.length + buses.length;
 
   return (
-    <div className="mt-3 rounded-2xl border p-3" style={{ backgroundColor: 'var(--ask-surface)', borderColor: 'var(--ask-border)' }} aria-live="polite">
+    <div
+      className="mt-3 rounded-2xl border p-3"
+      style={{ backgroundColor: 'var(--ask-surface)', borderColor: 'var(--ask-border)' }}
+      aria-live="polite"
+    >
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ask-muted)' }}>
-          {routes.length === 1 ? '1 matching route' : `${routes.length} matching routes`}
+          {total === 1 ? '1 match' : `${total} matches`}
         </span>
         <span
           className="text-[10px] font-semibold px-2 py-0.5 rounded-full leading-none"
@@ -115,58 +132,103 @@ export function AskResults({ result }) {
         </p>
       )}
 
-      {routes.length === 0 ? (
+      {total === 0 ? (
         <p className="text-[13px] py-1" style={{ color: 'var(--ask-muted)' }}>
-          No matching routes. Try a stop name, a route name or a bus name.
+          No matching routes, stops or buses. Try a stop name, a route name or a bus name.
         </p>
       ) : (
-        <ul className="space-y-1.5">
-          {routes.map((route) => (
-            <li key={route._id}>
-              <Link
-                to={`/routes/${route._id}`}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.03]"
-                style={{ color: 'var(--ask-text)' }}
-              >
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: route.color || 'var(--ask-accent)' }} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold truncate">{route.name}</p>
-                  <p className="text-[11px] truncate" style={{ color: 'var(--ask-muted)' }}>
-                    {route.stops.length === 0 ? 'No stops yet' : `${route.stops.length} stops: ${route.stops.slice(0, 3).join(', ')}${route.stops.length > 3 ? '...' : ''}`}
-                  </p>
-                  {route.buses.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {route.buses.map((bus) => (
-                        <span
-                          key={bus._id}
-                          className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: 'var(--ask-accent-soft)', color: 'var(--ask-text)' }}
-                        >
-                          <IconBus size={11} />
-                          {bus.name}
-                          <span
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: bus.status === 'online' ? 'var(--ask-accent)' : 'var(--ask-muted)' }}
-                            aria-label={bus.status === 'online' ? 'online' : 'offline'}
-                          />
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <IconArrowRight size={16} className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-3">
+          {routes.length > 0 && (
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--ask-muted)' }}>Routes</p>
+              <ul className="space-y-1.5">
+                {routes.map((route) => (
+                  <li key={route._id}>
+                    <Link
+                      to={`/routes/${route._id}`}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.03]"
+                      style={{ color: 'var(--ask-text)' }}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: route.color || 'var(--ask-accent)' }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold truncate">{route.name}</p>
+                        <p className="text-[11px] truncate" style={{ color: 'var(--ask-muted)' }}>
+                          {route.stops.length === 0
+                            ? 'No stops yet'
+                            : `${route.stops.length} stops: ${route.stops.slice(0, 3).join(', ')}${route.stops.length > 3 ? '…' : ''}`}
+                        </p>
+                        {route.buses.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {route.buses.map((bus) => (
+                              <span
+                                key={bus._id}
+                                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: 'var(--ask-accent-soft)', color: 'var(--ask-text)' }}
+                              >
+                                <IconBus size={11} />
+                                {bus.name}
+                                <StatusDot status={bus.status} />
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {stops.length > 0 && (
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--ask-muted)' }}>Stops</p>
+              <ul className="space-y-1">
+                {stops.map((s) => (
+                  <li key={s._id}>
+                    <Link
+                      to={`/routes/${s.routeId}`}
+                      className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] transition-colors hover:bg-black/[0.03]"
+                      style={{ color: 'var(--ask-accent)' }}
+                    >
+                      <IconMapPin size={13} />
+                      {s.name}
+                      <span style={{ color: 'var(--ask-muted)' }}>· {s.routeName}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {buses.length > 0 && (
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--ask-muted)' }}>Buses</p>
+              <ul className="space-y-1">
+                {buses.map((b) => (
+                  <li key={b._id}>
+                    <Link
+                      to={`/devices/${b._id}`}
+                      className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] transition-colors hover:bg-black/[0.03]"
+                      style={{ color: 'var(--ask-accent)' }}
+                    >
+                      <IconBus size={13} />
+                      {b.name}
+                      <StatusDot status={b.status} />
+                      {b.routeName && <span style={{ color: 'var(--ask-muted)' }}>· {b.routeName}</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════
-   ASK BAR
-   ═══════════════════════════════════════════ */
+/* ═══════════ ASK BAR ═══════════ */
 export default function AskBar() {
   const { theme } = useTheme();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;

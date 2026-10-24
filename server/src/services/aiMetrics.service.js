@@ -1,4 +1,3 @@
-// server/src/services/aiMetrics.service.js
 // Every number the delay note may mention is computed here, from our own data. The AI never calculates.
 import LocationPing from '../models/locationPing.model.js';
 import Device from '../models/device.model.js';
@@ -7,7 +6,7 @@ import { computeDelayForDevice } from './delay.service.js';
 const TZ = process.env.APP_TIMEZONE || 'Asia/Karachi';
 const MAX_GAP_SECONDS = 180; // longer gaps mean the device was offline, not moving
 
-function haversineKm(a, b) {
+export function haversineKm(a, b) {
   const R = 6371;
   const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
   const dLon = ((b.longitude - a.longitude) * Math.PI) / 180;
@@ -47,7 +46,7 @@ export async function computeDelayMetrics(deviceId) {
   // The most recent stop arrival is the one we explain
   const latest = arrived.slice().sort((a, b) => new Date(b.actualArrival) - new Date(a.actualArrival))[0];
 
-  // "Today" uses the server's local day, the same convention as delay.service.js (the server TZ is set in app.js)
+  // "Today" uses the server's local day, same convention as delay.service.js (TZ set in app.js)
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const sevenDaysAgo = new Date(startOfToday);

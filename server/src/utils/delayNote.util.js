@@ -1,8 +1,7 @@
-// server/src/utils/delayNote.util.js
-// Pure helpers for the delay note (no database, no network) so they are easy to test.
+// Pure helpers for the delay note (no database, no network).
 
 export const DELAY_NOTE_THRESHOLD_MINUTES = 15;   // below this, no note is shown
-export const MAX_REASONABLE_DELAY_MINUTES = 180;  // above this the schedule/arrival pair is not meaningful (e.g. a late-evening return trip)
+export const MAX_REASONABLE_DELAY_MINUTES = 180;  // above this the schedule/arrival pair is not meaningful (e.g. a late-evening return trip vs a 07:30 schedule)
 
 // Causes the system does not measure. If the model mentions one, the note is rejected.
 const CAUSE_WORDS = /\b(traffic|weather|rain|raining|fog|accident|breakdown|broke|broken|mechanical|jam|congestion|construction|roadwork|protest|strike|fuel|driver|engine|tyre|tire|police|flood)\b/i;

@@ -27,6 +27,8 @@ import { startGt06Server } from './src/tcp/gt06Server.js';
 import routeRoutes from './src/routes/route.routes.js';
 import bridgeRoutes from './src/routes/bridge.routes.js'; 
 import aiRoutes from './src/routes/ai.routes.js';
+// import Device from './src/models/device.model.js';
+// import { startOfflineWatchdog } from './src/services/offlineWatchdog.service.js';
 
 const app = express();
 app.set('trust proxy', 1); // required on Render/behind a reverse proxy for secure cookies + accurate IPs
@@ -94,6 +96,8 @@ app.use((err, req, res, next) => {
 
 async function start() {
   await connectDB();
+// A restart drops every socket without running disconnect handlers, so any 'online' left in the DB is stale
+  // await Device.updateMany({ status: 'online' }, { status: 'offline' });
   const port = process.env.PORT || 5000;
   server.listen(port, () => {
     console.log(`Server running on port ${port} [${process.env.NODE_ENV}]`);
@@ -101,6 +105,7 @@ async function start() {
 
   const gt06Port = process.env.GT06_TCP_PORT || 5023;
   startGt06Server({ port: gt06Port, io });
+  // startOfflineWatchdog(io);
 }
 
 start();

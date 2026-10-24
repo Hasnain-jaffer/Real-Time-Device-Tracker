@@ -8,6 +8,7 @@ import MapSizeFix from '../components/map/MapSizeFix';
 import { useTheme } from '../app/ThemeContext';
 import { useAuth } from '../app/AuthContext';
 import { useToast } from '../app/ToastContext';
+import ScheduleEditor from '../features/schedule/components/ScheduleEditor';
 
 /* ─── SVG Icons ─── */
 const IconBus = ({ size = 14, className = '', style = {} }) => (
@@ -413,6 +414,10 @@ export default function RouteDetailsPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {isAdmin && stops.length > 0 && (
+          <ScheduleEditor stops={stops} buses={buses} tokens={tokens} />
         )}
       </div>
 

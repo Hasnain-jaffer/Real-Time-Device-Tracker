@@ -100,6 +100,7 @@ export default function RouteDetailsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingStop, setEditingStop] = useState(null);
   const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
+  const [etaBuses, setEtaBuses] = useState([]);
 
   function refresh() {
     setIsLoading(true);
@@ -112,6 +113,25 @@ export default function RouteDetailsPage() {
   }
 
   useEffect(() => { refresh(); }, [routeId]);
+
+  useEffect(() => {
+    let alive = true;
+    function loadEta() {
+      geofenceApi.getRouteEta(routeId).then((d) => alive && setEtaBuses(d.buses || [])).catch(() => {});
+    }
+    loadEta();
+    const timer = setInterval(loadEta, 20000);
+    return () => { alive = false; clearInterval(timer); };
+  }, [routeId]);
+
+  function soonestEta(stopId) {
+    let best = null;
+    etaBuses.forEach((b) => {
+      const e = b.etas.find((x) => x.stopId === stopId);
+      if (e && (!best || e.minutes < best.minutes)) best = { ...e, busName: b.name };
+    });
+    return best;
+  }
 
   async function handleSubmit(payload) {
     if (editingStop) {
@@ -313,6 +333,19 @@ export default function RouteDetailsPage() {
                           {i > 0 && `${(stop.distanceFromPrevMeters / 1000).toFixed(2)} km from previous · `}
                           Radius {stop.radiusMeters}m
                         </p>
+                        
+                        {(() => {
+                          const eta = soonestEta(stop._id);
+                          if (!eta) return null;
+                          return (
+                            <p className="text-xs mt-1 font-medium" style={{ color: 'var(--accent-primary)' }}>
+                              Next bus: {eta.busName} · {new Date(eta.etaAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (in {eta.minutes} min)
+                              <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>
+                                {eta.method === 'historical' ? 'based on past trips' : 'rough estimate'}
+                              </span>
+                            </p>
+                          );
+                        })()}
                       </div>
                       {isAdmin && (
                         <div className="flex gap-1 flex-shrink-0">

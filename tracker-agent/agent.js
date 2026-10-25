@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { io } from 'socket.io-client';
 import { createSimulateProvider } from './locationProviders/simulateProvider.js';
 import { createGpsProvider } from './locationProviders/gpsProvider.js';
+import { createRouteProvider } from './locationProviders/routeProvider.js';
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 const DEVICE_KEY = process.env.DEVICE_KEY;
@@ -16,7 +17,11 @@ if (!DEVICE_KEY || DEVICE_KEY === 'dev_your_device_key_here') {
 
 function getLocationProvider() {
   if (LOCATION_SOURCE === 'gps') {
-    return createGpsProvider();
+    return createRouteProvider({
+      waypointsFile: process.env.WAYPOINTS_FILE || './waypoints.json',
+      speedKmh: Number(process.env.SIM_SPEED_KMH) || 100,
+      intervalMs: REPORT_INTERVAL_MS,
+    });
   }
   return createSimulateProvider({
     startLat: Number(process.env.SIMULATE_START_LAT) || 25.4610,

@@ -2,6 +2,7 @@
 import Route from '../models/route.model.js';
 import Geofence from '../models/geofence.model.js';
 import Device from '../models/device.model.js';
+import { computeRouteEta } from '../services/eta.service.js';
 
 function haversineMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -114,6 +115,14 @@ export async function listRouteBuses(req, res, next) {
   try {
     const buses = await Device.find({ routeId: req.params.id });
     res.json({ buses });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getRouteEta(req, res, next) {
+  try {
+    res.json(await computeRouteEta(req.params.id));
   } catch (err) {
     next(err);
   }

@@ -8,6 +8,7 @@ import {
   getRouteDetail,
   listRouteBuses,
   assignBusToRoute,
+  getRouteEta,
 } from '../controllers/route.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
@@ -22,5 +23,6 @@ router.post('/', authorize('admin'), createRoute);
 router.patch('/:id', authorize('admin'), updateRoute);
 router.delete('/:id', authorize('admin'), deleteRoute);
 router.post('/device/:deviceId/assign', authorize('admin'), assignBusToRoute);
+router.get('/:id/eta', getRouteEta);
 
 export default router;

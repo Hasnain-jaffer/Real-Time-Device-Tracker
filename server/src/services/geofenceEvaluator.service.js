@@ -4,6 +4,7 @@ import Notification from '../models/notification.model.js';
 import Device from '../models/device.model.js';
 import User from '../models/user.model.js';
 import Schedule from '../models/schedule.model.js';
+import StopArrival from '../models/stopArrival.model.js';
 
 const EXIT_BUFFER_MULTIPLIER = 1.3;
 
@@ -84,6 +85,13 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
       if (!fence) continue;
 
       const arrivalTime = new Date();
+
+      StopArrival.create({
+        deviceId,
+        routeId: device.routeId,
+        geofenceId: fence._id,
+        arrivedAt: arrivalTime,
+      }).catch((err) => console.error('[eta] Failed to record stop arrival:', err.message));
 
       await broadcastNotification(io, allUsers, {
         type: 'geofence-enter',

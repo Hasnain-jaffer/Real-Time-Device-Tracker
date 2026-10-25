@@ -6,6 +6,7 @@ import { useAuth } from '../../app/AuthContext';
 import { useSocket } from '../../app/SocketProvider';
 import { useTheme } from '../../app/ThemeContext';
 import GlobalSearchModal from '../../features/search/components/GlobalSearchModal';
+import { useToast } from '../../app/ToastContext';
 
 /* ═══════════════════════════════════════════
    INLINE SVG ICONS — no extra deps
@@ -148,6 +149,7 @@ const darkTokens = {
 };
 
 export default function Navbar() {
+  const { showToast } = useToast();
   const { user, logout } = useAuth();
   const { socket } = useSocket();
   const { theme, toggleTheme } = useTheme();
@@ -172,13 +174,19 @@ export default function Navbar() {
     return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
-  useEffect(() => {
-    function handleNewNotification() {
+    useEffect(() => {
+    const TOAST_TYPE = {
+      'device-offline': 'warning',
+      'system-message': 'warning', // schedule delay alerts
+      'security-alert': 'error',
+    };
+    function handleNewNotification(notif) {
       setUnreadCount((prev) => prev + 1);
+      showToast(notif.title, TOAST_TYPE[notif.type] || 'info', 6000);
     }
     socket.on('notification', handleNewNotification);
     return () => socket.off('notification', handleNewNotification);
-  }, [socket]);
+  }, [socket, showToast]);
 
   useEffect(() => {
     function handleKeyDown(e) {

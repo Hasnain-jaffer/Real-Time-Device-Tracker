@@ -41,3 +41,7 @@ export function deleteRoute(id) {
 export function assignBusToRoute(deviceId, routeId) {
   return apiClient.post(`/routes/device/${deviceId}/assign`, { routeId }).then((res) => res.data.device);
 }
+
+export function getRouteEta(routeId) {
+  return apiClient.get(`/routes/${routeId}/eta`).then((res) => res.data);
+}

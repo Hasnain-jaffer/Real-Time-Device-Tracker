@@ -5,6 +5,7 @@ import Device from '../models/device.model.js';
 import User from '../models/user.model.js';
 import Schedule from '../models/schedule.model.js';
 import StopArrival from '../models/stopArrival.model.js';
+import { broadcastNotification } from './notify.service.js'; // ADD THIS
 
 const EXIT_BUFFER_MULTIPLIER = 1.3;
 
@@ -17,7 +18,8 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
-const LATE_THRESHOLD_MINUTES = 5; // don't spam alerts for trivial 1-2 minute variance
+
+const LATE_THRESHOLD_MINUTES = 5;
 
 function todayAt(hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
@@ -28,13 +30,13 @@ function todayAt(hhmm) {
 
 async function maybeFireDelayAlert(io, allUsers, { deviceId, deviceName, geofenceId, fenceName, arrivalTime }) {
   const scheduleEntry = await Schedule.findOne({ deviceId, geofenceId, isActive: true });
-  if (!scheduleEntry) return; // no schedule set for this stop -- nothing to compare against
+  if (!scheduleEntry) return;
 
   const expected = todayAt(scheduleEntry.expectedTime);
   const delayMinutes = Math.round((arrivalTime - expected) / 60000);
 
   if (delayMinutes > LATE_THRESHOLD_MINUTES) {
-    await broadcastNotification(io, allUsers, {
+    await broadcastNotification(io, {
       type: 'system-message',
       title: `${deviceName} is running late`,
       message: `${deviceName} arrived at ${fenceName} ${delayMinutes} minutes behind schedule.`,
@@ -43,16 +45,14 @@ async function maybeFireDelayAlert(io, allUsers, { deviceId, deviceName, geofenc
     });
   }
 }
+
 export async function evaluateGeofences({ deviceId, deviceName, latitude, longitude, io }) {
   if (!deviceId) return;
 
   try {
     const device = await Device.findById(deviceId).select('insideGeofenceIds routeId');
-    if (!device || !device.routeId) return; // no route assigned -- nothing to evaluate
+    if (!device || !device.routeId) return;
 
-    // Only this device's own route's stops are relevant -- much cheaper than
-    // scanning every geofence in the system, and correct now that stops
-    // belong to a route rather than being directly linked to buses.
     const geofences = await Geofence.find({ routeId: device.routeId, isActive: true });
     if (geofences.length === 0) return;
 
@@ -76,11 +76,9 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
 
     await Device.updateOne({ _id: deviceId }, { insideGeofenceIds: [...currentlyInside] });
 
-    // Notify every user — this is a shared bus-tracking app, everyone can be
-    // interested in any bus's arrival/departure at a stop.
-    const allUsers = await User.find().select('_id');
+    const allUsers = await User.find({ isSuspended: false }).select('_id');
 
-        for (const fenceId of entered) {
+    for (const fenceId of entered) {
       const fence = geofences.find((f) => f._id.toString() === fenceId);
       if (!fence) continue;
 
@@ -93,7 +91,7 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
         arrivedAt: arrivalTime,
       }).catch((err) => console.error('[eta] Failed to record stop arrival:', err.message));
 
-      await broadcastNotification(io, allUsers, {
+      await broadcastNotification(io, {
         type: 'geofence-enter',
         title: `${deviceName} arrived at ${fence.name}`,
         message: `${deviceName} entered the ${fence.name} zone.`,
@@ -101,9 +99,6 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
         geofenceId: fence._id,
       });
 
-      // Fire a separate, distinct delay alert only if meaningfully late --
-      // keeps the routine arrival notification clean and adds a second,
-      // clearly different alert type for genuine schedule problems.
       await maybeFireDelayAlert(io, allUsers, {
         deviceId,
         deviceName,
@@ -112,11 +107,12 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
         arrivalTime,
       });
     }
-    
+
     for (const fenceId of exited) {
       const fence = geofences.find((f) => f._id.toString() === fenceId);
       if (!fence) continue;
-            await broadcastNotification(io, allUsers, {
+
+      await broadcastNotification(io, {
         type: 'geofence-exit',
         title: `${deviceName} left ${fence.name}`,
         message: `${deviceName} exited the ${fence.name} zone.`,
@@ -126,12 +122,5 @@ export async function evaluateGeofences({ deviceId, deviceName, latitude, longit
     }
   } catch (err) {
     console.error('[geofenceEvaluator] Failed to evaluate geofences:', err.message);
-  }
-}
-
-async function broadcastNotification(io, users, { type, title, message, deviceId, geofenceId }) {
-  for (const user of users) {
-    const notif = await Notification.create({ userId: user._id, type, title, message, deviceId, geofenceId });
-    if (io) io.to(`user:${user._id.toString()}`).emit('notification', notif);
   }
 }

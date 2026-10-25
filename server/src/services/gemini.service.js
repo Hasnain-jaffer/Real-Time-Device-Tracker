@@ -3,6 +3,7 @@ import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import { parseModelJson } from '../utils/aiSearch.util.js';
 
 const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 8000;
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 
 const SEARCH_INSTRUCTION = `You are a routing helper for a university bus tracking system.
 The user message is JSON with three fields:
@@ -26,7 +27,7 @@ Rules:
 let client = null;
 
 export function isGeminiConfigured() {
-  return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL);
+  return Boolean(process.env.GEMINI_API_KEY && (process.env.GEMINI_MODEL || DEFAULT_MODEL));
 }
 
 function getClient() {
@@ -44,7 +45,7 @@ async function generate({ systemInstruction, contents, json }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const model = process.env.GEMINI_MODEL;
+    const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
     const response = await getClient().models.generateContent({
       model,
       contents,

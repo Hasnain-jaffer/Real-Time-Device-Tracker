@@ -198,7 +198,7 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Welcome back, {user?.name?.split(' ')[0] || 'there'} 👋
+              Welcome back, {user?.name?.split(' ')[0] || 'there'}
             </h1>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-secondary)' }}>
               {onlineCount} bus{onlineCount !== 1 ? 'es' : ''} live · {isConnected ? 'All systems normal' : 'Reconnecting…'}
@@ -281,7 +281,7 @@ export default function DashboardPage() {
               <IconBus size={18} style={{ color: 'var(--accent-primary)' }} />
             </div>
             <div>
-              <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Active buses</p>
+              <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Registered buses</p>
               <p className="text-[15px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{devices.length}</p>
             </div>
           </div>
@@ -291,7 +291,7 @@ export default function DashboardPage() {
               <IconClock size={18} style={{ color: 'var(--badge-eta-text)' }} />
             </div>
             <div>
-              <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>On-time</p>
+              <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Online now</p>
               <p className="text-[15px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{onlineCount}/{devices.length || 0}</p>
             </div>
           </div>

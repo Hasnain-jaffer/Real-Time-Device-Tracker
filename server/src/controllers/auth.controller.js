@@ -85,6 +85,9 @@ export async function login(req, res, next) {
     res.cookie(REFRESH_COOKIE_NAME, refreshToken, REFRESH_COOKIE_OPTIONS);
     res.json({
       accessToken,
+      // Mobile apps can't rely on httpOnly cookies, so they get the refresh token in the body
+      // and keep it in the OS secure store. Web clients never receive it in JSON.
+      ...(req.headers['x-client'] === 'mobile' ? { refreshToken } : {}),
       user: {
         id: user._id,
         name: user.name,
@@ -102,7 +105,7 @@ export async function login(req, res, next) {
 
 export async function refresh(req, res, next) {
   try {
-    const token = req.cookies[REFRESH_COOKIE_NAME];
+    const token = req.cookies[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
     if (!token) {
       return res.status(401).json({ message: 'No refresh token provided' });
     }
@@ -128,7 +131,7 @@ export async function refresh(req, res, next) {
 
 export async function logout(req, res, next) {
   try {
-    const token = req.cookies[REFRESH_COOKIE_NAME];
+    const token = req.cookies[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
     if (token) {
       await User.updateOne({ refreshTokens: token }, { $pull: { refreshTokens: token } });
     }

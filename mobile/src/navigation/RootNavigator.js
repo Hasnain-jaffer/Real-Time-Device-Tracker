@@ -6,11 +6,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationsContext';
+import { navigationRef } from './navigationRef';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
 import LiveMapScreen from '../screens/LiveMapScreen';
+import RoutesScreen from '../screens/RoutesScreen';
+import RouteDetailScreen from '../screens/RouteDetailScreen';
+import AlertsScreen from '../screens/AlertsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -23,8 +27,30 @@ const ICONS = {
   Profile: 'person-outline',
 };
 
+function RoutesStack() {
+  const { colors } = useTheme();
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.bgSidebar },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: { fontWeight: '600' },
+        contentStyle: { backgroundColor: colors.bgPage },
+      }}
+    >
+      <Stack.Screen name="RoutesList" component={RoutesScreen} options={{ title: 'Routes' }} />
+      <Stack.Screen
+        name="RouteDetail"
+        component={RouteDetailScreen}
+        options={({ route }) => ({ title: route.params?.routeName || 'Route' })}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function Tabs() {
   const { colors } = useTheme();
+  const { unreadCount } = useNotifications();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -39,8 +65,15 @@ function Tabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Live Map" component={LiveMapScreen} />
-      <Tab.Screen name="Routes">{() => <PlaceholderScreen title="Routes" />}</Tab.Screen>
-      <Tab.Screen name="Alerts">{() => <PlaceholderScreen title="Alerts" />}</Tab.Screen>
+      <Tab.Screen name="Routes" component={RoutesStack} options={{ headerShown: false }} />
+      <Tab.Screen
+        name="Alerts"
+        component={AlertsScreen}
+        options={{
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.critical, color: '#FFFFFF' },
+        }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -72,7 +105,7 @@ export default function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} ref={navigationRef}>
       {user ? (
         <Tabs />
       ) : (

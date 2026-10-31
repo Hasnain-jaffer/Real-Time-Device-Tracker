@@ -5,6 +5,8 @@ import { setAccessToken, getRefreshToken, saveRefreshToken, clearTokens } from '
 
 const AuthContext = createContext(null);
 
+const normalizeUser = (u) => (u ? { ...u, id: u.id || u._id } : u);
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +21,7 @@ export function AuthProvider({ children }) {
         if (!stored) return;
         await refreshAccessToken();
         const { data } = await apiClient.get('/auth/me');
-        setUser(data.user);
+        setUser(normalizeUser(data.user));      
       } catch (err) {
         // Only forget the session if the server rejected it. A network error
         // (offline, server waking) must not log the student out.
@@ -34,8 +36,8 @@ export function AuthProvider({ children }) {
     const { data } = await apiClient.post('/auth/login', { email, password });
     setAccessToken(data.accessToken);
     if (data.refreshToken) await saveRefreshToken(data.refreshToken);
-    setUser(data.user);
-  }
+    setUser(normalizeUser(data.user));
+    }
 
   async function logout() {
     try {

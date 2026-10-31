@@ -6,11 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "package":"com.mycampusride.app",
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "package":"com.mycampusride.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -22,7 +22,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      ["expo-location", { "locationWhenInUsePermission": "My Campus Ride uses your location to show how far each bus is from you." }]
     ]
   }
 }

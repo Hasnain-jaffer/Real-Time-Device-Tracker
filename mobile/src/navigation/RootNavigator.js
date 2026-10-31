@@ -10,6 +10,7 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
+import LiveMapScreen from '../screens/LiveMapScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -37,7 +38,7 @@ function Tabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Live Map">{() => <PlaceholderScreen title="Live Map" />}</Tab.Screen>
+      <Tab.Screen name="Live Map" component={LiveMapScreen} />
       <Tab.Screen name="Routes">{() => <PlaceholderScreen title="Routes" />}</Tab.Screen>
       <Tab.Screen name="Alerts">{() => <PlaceholderScreen title="Alerts" />}</Tab.Screen>
       <Tab.Screen name="Profile" component={ProfileScreen} />

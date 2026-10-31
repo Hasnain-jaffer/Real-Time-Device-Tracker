@@ -9,8 +9,28 @@ export function useTrackedDevices() {
   const [liveData, setLiveData] = useState({}); // keyed by deviceId OR socket id fallback
   const [hiddenIds, setHiddenIds] = useState(new Set());
 
-  useEffect(() => {
-    deviceApi.listDevices().then(setRegisteredDevices).catch(() => {});
+    useEffect(() => {
+    deviceApi.listDevices().then((devices) => {
+      setRegisteredDevices(devices);
+      // Show buses that are already online right away, using their last known position.
+      // Without this a bus only appears after its next live ping (and a parked bus never does).
+      setLiveData((prev) => {
+        const seeded = {};
+        devices.forEach((d) => {
+          if (d.status === 'online' && d.lastLocation?.latitude != null) {
+            seeded[d._id] = {
+              socketId: null,
+              deviceId: d._id,
+              latitude: d.lastLocation.latitude,
+              longitude: d.lastLocation.longitude,
+              updatedAt: d.lastSeenAt ? new Date(d.lastSeenAt) : new Date(),
+              speedKmh: null,
+            };
+          }
+        });
+        return { ...seeded, ...prev }; // live events always win over the seed
+      });
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

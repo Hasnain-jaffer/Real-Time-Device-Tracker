@@ -2,26 +2,61 @@
 // Simulated GT06 tracker for testing the TCP bridge (or the in-process server) without
 // real hardware.
 //
-// Usage:  node testTracker.js [host] [port] [imei] [lat] [lng]
+// Usage:  node testTracker.js [host] [port] [imei] [lat] [lng] [--route=file.json] [--speed=kmh] [--interval=ms]
 //   e.g.  node testTracker.js localhost 5024 123456789012345
 //         node testTracker.js 13.234.10.20 5023 123456789012345
 //         node testTracker.js localhost 5024 123456789012345 25.4612 68.7155   (start at a stop's coordinates)
-// Defaults: host=localhost, port=5023, imei=0123456789012345, lat/lng=25.461/68.7183
+//         node testTracker.js localhost 5024 123456789012345 --route=waypoints.json --speed=120 --interval=1000
+//   --route drives along the waypoints (the stops, in order) instead of wandering, so arrivals, delays and ETAs can be tested.
+// Defaults: host=localhost, port=5023, imei=0123456789012345, lat/lng=25.461/68.7183, speed=40 km/h, interval=5000 ms
 // (env vars GT06_HOST, GT06_TCP_PORT, TEST_IMEI also work)
 //
 // Sends a login packet, waits for the server's ACK, then sends a location packet
-// every 5 seconds (slowly drifting around Tandojam) and a heartbeat every 30 seconds,
-// like a real tracker does.
+// every interval and a heartbeat every 30 seconds, like a real tracker does.
 
 import net from 'net';
+import fs from 'fs';
 
-const [, , argHost, argPort, argImei, argLat, argLng] = process.argv;
+const rawArgs = process.argv.slice(2);
+const flags = Object.fromEntries(
+  rawArgs.filter((a) => a.startsWith('--')).map((a) => { const [k, v] = a.slice(2).split('='); return [k, v ?? true]; })
+);
+const [argHost, argPort, argImei, argLat, argLng] = rawArgs.filter((a) => !a.startsWith('--'));
 const HOST = argHost || process.env.GT06_HOST || 'localhost';
 const PORT = Number(argPort || process.env.GT06_TCP_PORT || 5023);
 const TEST_IMEI = argImei || process.env.TEST_IMEI || '0123456789012345'; // must match the imei of a Device in your DB
 const START_LAT = Number(argLat) || 25.461;
 const START_LNG = Number(argLng) || 68.7183;
 const DRIFT = 0.0001; // about 11 m per step, so a bus placed on a stop stays inside its geofence
+const SPEED_KMH = Number(flags.speed) || 40;
+const INTERVAL_MS = Number(flags.interval) || 5000;
+
+// Route mode: move along the waypoints at SPEED_KMH, then start the trip again
+function createRouteMover(file) {
+  const waypoints = JSON.parse(fs.readFileSync(file, 'utf8')); // [[lat, lng], ...]
+  const km = ([la1, lo1], [la2, lo2]) => {
+    const R = 6371, t = (x) => (x * Math.PI) / 180;
+    const a = Math.sin(t(la2 - la1) / 2) ** 2 + Math.cos(t(la1)) * Math.cos(t(la2)) * Math.sin(t(lo2 - lo1) / 2) ** 2;
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+  const cum = [0];
+  for (let i = 1; i < waypoints.length; i++) cum.push(cum[i - 1] + km(waypoints[i - 1], waypoints[i]));
+  const total = cum[cum.length - 1];
+  const stepKm = SPEED_KMH * (INTERVAL_MS / 3600000);
+  let travelled = 0;
+  console.log(`[test-tracker] Route mode: ${waypoints.length} waypoints, ${total.toFixed(1)} km, ${SPEED_KMH} km/h, one position every ${INTERVAL_MS} ms (about ${(stepKm * 1000).toFixed(0)} m per position)`);
+  return () => {
+    travelled += stepKm;
+    if (travelled > total + 0.3) travelled = 0; // short pause at the end, then a new trip
+    const d = Math.min(travelled, total);
+    let i = 1;
+    while (i < cum.length - 1 && cum[i] < d) i++;
+    const seg = cum[i] - cum[i - 1];
+    const f = seg === 0 ? 0 : (d - cum[i - 1]) / seg;
+    return [waypoints[i - 1][0] + (waypoints[i][0] - waypoints[i - 1][0]) * f, waypoints[i - 1][1] + (waypoints[i][1] - waypoints[i - 1][1]) * f];
+  };
+}
+const routeMover = flags.route ? createRouteMover(flags.route) : null;
 
 function crc16Itu(buffer) {
   let fcs = 0xffff;
@@ -118,12 +153,18 @@ socket.on('data', (data) => {
   started = true; // the first ACK is the login ACK: the server accepted us, start reporting
 
   locationTimer = setInterval(() => {
-    lat += (Math.random() - 0.5) * DRIFT;
-    lng += (Math.random() - 0.5) * DRIFT;
-    const speed = Math.floor(Math.random() * 40);
+    let speed;
+    if (routeMover) {
+      [lat, lng] = routeMover();
+      speed = Math.min(Math.round(SPEED_KMH), 255);
+    } else {
+      lat += (Math.random() - 0.5) * DRIFT;
+      lng += (Math.random() - 0.5) * DRIFT;
+      speed = Math.floor(Math.random() * 40);
+    }
     console.log(`[test-tracker] Sending location: ${lat.toFixed(6)}, ${lng.toFixed(6)} @ ${speed} km/h`);
     socket.write(buildLocationPacket(lat, lng, speed));
-  }, 5000);
+  }, INTERVAL_MS);
 
   heartbeatTimer = setInterval(() => {
     console.log('[test-tracker] Sending heartbeat');

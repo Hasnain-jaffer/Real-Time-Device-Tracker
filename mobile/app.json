@@ -1,14 +1,20 @@
 {
   "expo": {
     "name": "My Campus Ride",
-    "slug": "my-campus-ride",
+    "slug": "mycampusride",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "package":"com.mycampusride.app",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4EFE6"
+    },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mycampusride.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -16,14 +22,20 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.mycampusride.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
       ["expo-location", { "locationWhenInUsePermission": "My Campus Ride uses your location to show how far each bus is from you." }]
-    ]
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id-here"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

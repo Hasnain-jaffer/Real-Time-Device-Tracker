@@ -1,14 +1,13 @@
 // mobile/src/context/ThemeContext.js
 import { createContext, useContext } from 'react';
-import { useColorScheme } from 'react-native';
-import { lightTokens, darkTokens } from '../theme/tokens';
+import { useThemeManager } from '../theme/ThemeManager';
 
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const isDark = useColorScheme() === 'dark';
+  const themeManager = useThemeManager();
   return (
-    <ThemeContext.Provider value={{ isDark, colors: isDark ? darkTokens : lightTokens }}>
+    <ThemeContext.Provider value={themeManager}>
       {children}
     </ThemeContext.Provider>
   );

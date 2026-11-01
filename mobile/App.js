@@ -1,6 +1,7 @@
 // mobile/App.js
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeManagerProvider } from './src/theme/ThemeManager';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { SocketProvider } from './src/context/SocketContext';
@@ -13,21 +14,23 @@ import InAppBanner from './src/components/InAppBanner';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <LiveBusesProvider>
-              <NotificationsProvider>
-                <LocationProvider>
-                  <RootNavigator />
-                  <InAppBanner />
-                  <StatusBar style="auto" />
-                </LocationProvider>
-              </NotificationsProvider>
-            </LiveBusesProvider>
-          </SocketProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <ThemeManagerProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <LiveBusesProvider>
+                <NotificationsProvider>
+                  <LocationProvider>
+                    <RootNavigator />
+                    <InAppBanner />
+                    <StatusBar style="auto" />
+                  </LocationProvider>
+                </NotificationsProvider>
+              </LiveBusesProvider>
+            </SocketProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </ThemeManagerProvider>
     </SafeAreaProvider>
   );
 }

@@ -26,7 +26,6 @@ export default function ProfileScreen() {
         <Text style={{ color: colors.critical, fontSize: 15, fontWeight: '600' }}>Log out</Text>
       </TouchableOpacity>
 
-      <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 20 }}>Server: {API_ORIGIN}</Text>
     </View>
   );
 }

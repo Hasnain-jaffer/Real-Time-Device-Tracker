@@ -189,27 +189,35 @@ export default function RoutesScreen() {
           {loading ? 'Loading routes…' : 'No routes have been created yet.'}
         </Text>
       }
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() => openRoute(item._id, item.name)}
-          style={[card, { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-        >
-          <View style={{ flexShrink: 1, paddingRight: 8 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>{item.name}</Text>
-            <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-              {item.busCount} bus{item.busCount !== 1 ? 'es' : ''} assigned
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {item.liveCount > 0 && (
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.badgeSuccessBg, marginRight: 8 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.badgeSuccessText }}>{item.liveCount} live</Text>
-              </View>
-            )}
-            <IconArrowRight size={16} color={colors.textMuted} />
-          </View>
-        </TouchableOpacity>
+      // mobile/src/screens/RoutesScreen.js
+// Update the renderItem to show bus count better:
+
+renderItem={({ item }) => (
+  <TouchableOpacity
+    onPress={() => openRoute(item._id, item.name)}
+    style={[card, { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+  >
+    <View style={{ flexShrink: 1, paddingRight: 8 }}>
+      <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>{item.name}</Text>
+      <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+        {item.busCount} bus{item.busCount !== 1 ? 'es' : ''} assigned
+      </Text>
+    </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {item.liveCount > 0 && (
+        <View style={{ 
+          flexDirection: 'row', alignItems: 'center',
+          paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, 
+          backgroundColor: colors.badgeSuccessBg, marginRight: 8 
+        }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.badgeSuccessText, marginRight: 4 }} />
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.badgeSuccessText }}>{item.liveCount} live</Text>
+        </View>
       )}
+      <IconArrowRight size={16} color={colors.textMuted} />
+    </View>
+  </TouchableOpacity>
+)}
     />
   );
 }

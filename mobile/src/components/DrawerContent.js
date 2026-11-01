@@ -1,19 +1,18 @@
 // mobile/src/components/DrawerContent.js
-import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationsContext';
-import { IconBus, IconHome, IconMap, IconRoute, IconBell, IconClock, IconSettings, IconUser, IconLogout, IconMoon, IconSun } from './Icons';
+import { IconBus, IconHome, IconMap, IconRoute, IconBell, IconClock, IconSettings, IconUser, IconLogout, IconMoon, IconSun, IconLogo } from './Icons';
 
 const MENU_ITEMS = [
-  { label: 'Home', icon: 'home', route: 'Home' },
-  { label: 'Buses', icon: 'bus', route: 'Buses' },
-  { label: 'Live Map', icon: 'map', route: 'Live Map' },
-  { label: 'Routes', icon: 'route', route: 'Routes' },
+  { label: 'Dashboard', icon: 'home', route: 'Home' },
+  { label: 'Devices', icon: 'bus', route: 'Buses' },
+  { label: 'Live tracking', icon: 'map', route: 'Live Map' },
   { label: 'History', icon: 'clock', route: 'History' },
-  { label: 'Alerts', icon: 'bell', route: 'Alerts', badge: true },
+  { label: 'Settings', icon: 'settings', route: 'Settings' },
 ];
 
 const ICONS = {
@@ -28,6 +27,7 @@ const ICONS = {
   logout: IconLogout,
   moon: IconMoon,
   sun: IconSun,
+  logo: IconLogo,
 };
 
 export default function DrawerContent(props) {
@@ -46,19 +46,28 @@ export default function DrawerContent(props) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgSidebar }}>
       {/* Header with logo */}
-      <View style={{ paddingTop: insets.top + 16, paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}>
+      <View style={{ 
+        paddingTop: insets.top + 20, 
+        paddingHorizontal: 20, 
+        paddingBottom: 20, 
+        borderBottomWidth: 1, 
+        borderBottomColor: 'rgba(255,255,255,0.08)' 
+      }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-            <IconBus size={22} color="#FFFFFF" />
+          <View style={{ 
+            width: 36, height: 36, borderRadius: 10, 
+            backgroundColor: colors.accent, 
+            alignItems: 'center', justifyContent: 'center', marginRight: 12 
+          }}>
+            <IconLogo size={20} color="#FFFFFF" />
           </View>
-          <View>
-            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700' }}>RoutePulse</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>Campus Bus Tracking</Text>
-          </View>
+          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>
+            My Campus Ride
+          </Text>
         </View>
       </View>
 
-      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 8 }}>
+      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 12 }}>
         {MENU_ITEMS.map((item) => {
           const IconComponent = ICONS[item.icon];
           const isActive = props.state.routeNames[props.state.index] === item.route;
@@ -71,66 +80,138 @@ export default function DrawerContent(props) {
                 alignItems: 'center',
                 paddingHorizontal: 20,
                 paddingVertical: 12,
-                backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderLeftWidth: 3,
-                borderLeftColor: isActive ? colors.accent : 'transparent',
+                marginHorizontal: 12,
+                borderRadius: 12,
+                backgroundColor: isActive ? colors.navActiveBg : 'transparent',
               }}
             >
-              <IconComponent size={20} color={isActive ? colors.accent : 'rgba(255,255,255,0.7)'} />
-              <Text style={{ color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.7)', fontSize: 15, fontWeight: isActive ? '600' : '400', marginLeft: 16, flex: 1 }}>
+              {isActive && (
+                <View style={{
+                  position: 'absolute', left: 0, top: '50%', marginTop: -10,
+                  width: 3, height: 20, borderRadius: 2, backgroundColor: colors.accent,
+                }} />
+              )}
+              <IconComponent 
+                size={20} 
+                color={isActive ? colors.accent : colors.navInactive} 
+                style={{ marginLeft: 8 }}
+              />
+              <Text style={{ 
+                color: isActive ? '#FFFFFF' : colors.navInactive, 
+                fontSize: 14, 
+                fontWeight: isActive ? '600' : '500', 
+                marginLeft: 14, 
+                flex: 1 
+              }}>
                 {item.label}
               </Text>
               {item.badge && unreadCount > 0 && (
-                <View style={{ backgroundColor: colors.critical, borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }}>
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                <View style={{ 
+                  backgroundColor: colors.badgeEtaBg, 
+                  borderRadius: 10, minWidth: 20, height: 20, 
+                  alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 
+                }}>
+                  <Text style={{ color: colors.badgeEtaText, fontSize: 11, fontWeight: '700' }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
                 </View>
               )}
             </TouchableOpacity>
           );
         })}
 
-        {/* Theme Section */}
-        <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' }}>
-          <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', paddingHorizontal: 20, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Appearance
-          </Text>
-          
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8 }}>
-            <IconSun size={18} color="rgba(255,255,255,0.7)" />
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginLeft: 16, flex: 1 }}>Theme</Text>
-            <TouchableOpacity
-              onPress={() => setThemeMode(mode === 'light' ? 'dark' : mode === 'dark' ? 'system' : 'light')}
-              style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
-            >
-              <IconMoon size={14} color="rgba(255,255,255,0.7)" style={{ marginRight: 6 }} />
-              <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}>{themeLabel}</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Theme Toggle */}
+        <View style={{ 
+          marginTop: 20, 
+          marginHorizontal: 12,
+          paddingTop: 16, 
+          borderTopWidth: 1, 
+          borderTopColor: 'rgba(255,255,255,0.08)' 
+        }}>
+          <TouchableOpacity
+            onPress={() => setThemeMode(mode === 'light' ? 'dark' : mode === 'dark' ? 'system' : 'light')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+            }}
+          >
+            {isDark ? (
+              <IconMoon size={18} color={colors.navInactive} />
+            ) : (
+              <IconSun size={18} color={colors.navInactive} />
+            )}
+            <Text style={{ color: colors.navInactive, fontSize: 14, marginLeft: 14, flex: 1 }}>
+              {themeLabel} mode
+            </Text>
+            <View style={{
+              width: 40, height: 22, borderRadius: 11,
+              backgroundColor: isDark ? colors.accent : 'rgba(255,255,255,0.2)',
+              justifyContent: 'center',
+              paddingHorizontal: 2,
+            }}>
+              <View style={{
+                width: 18, height: 18, borderRadius: 9,
+                backgroundColor: '#fff',
+                alignSelf: isDark ? 'flex-end' : 'flex-start',
+              }} />
+            </View>
+          </TouchableOpacity>
         </View>
       </DrawerContentScrollView>
 
-      {/* Bottom: Profile & Logout */}
-      <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingBottom: insets.bottom + 16 }}>
+      {/* Bottom: User & Logout */}
+      <View style={{ 
+        padding: 16, 
+        borderTopWidth: 1, 
+        borderTopColor: 'rgba(255,255,255,0.08)', 
+        paddingBottom: insets.bottom + 16 
+      }}>
         <TouchableOpacity
           onPress={() => handleNavigate('Profile')}
-          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderRadius: 12,
+            marginBottom: 8,
+          }}
         >
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>
+          <View style={{ 
+            width: 36, height: 36, borderRadius: 18, 
+            backgroundColor: colors.accent, 
+            alignItems: 'center', justifyContent: 'center' 
+          }}>
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+              {user?.name?.[0]?.toUpperCase() || 'U'}
+            </Text>
           </View>
           <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }} numberOfLines={1}>{user?.name || 'User'}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }} numberOfLines={1}>{user?.email}</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+              {user?.name || 'User'}
+            </Text>
+            <Text style={{ color: colors.navInactive, fontSize: 12, textTransform: 'capitalize' }} numberOfLines={1}>
+              {user?.role || 'user'}
+            </Text>
           </View>
-          <IconUser size={18} color="rgba(255,255,255,0.5)" />
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={logout}
-          style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}
+          style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderRadius: 12,
+          }}
         >
           <IconLogout size={18} color={colors.critical} />
-          <Text style={{ color: colors.critical, fontSize: 14, fontWeight: '500', marginLeft: 12 }}>Log out</Text>
+          <Text style={{ color: colors.critical, fontSize: 14, fontWeight: '500', marginLeft: 14 }}>
+            Log out
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

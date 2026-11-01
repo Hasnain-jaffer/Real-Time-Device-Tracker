@@ -18,19 +18,7 @@ export const IconSearch = ({ size = 24, color = '#000', style }) => (
   </Svg>
 );
 
-export const IconSparkle = ({ size = 24, color = '#000', style }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <Path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
-    <Path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
-  </Svg>
-);
 
-export const IconClose = ({ size = 24, color = '#000', style }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <Line x1="18" y1="6" x2="6" y2="18" />
-    <Line x1="6" y1="6" x2="18" y2="18" />
-  </Svg>
-);
 
 export const IconMapPin = ({ size = 24, color = '#000', style }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -39,12 +27,7 @@ export const IconMapPin = ({ size = 24, color = '#000', style }) => (
   </Svg>
 );
 
-export const IconArrowRight = ({ size = 24, color = '#000', style }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <Line x1="5" y1="12" x2="19" y2="12" />
-    <Polyline points="12 5 19 12 12 19" />
-  </Svg>
-);
+
 
 export const IconBell = ({ size = 24, color = '#000', style }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -68,13 +51,6 @@ export const IconAlert = ({ size = 24, color = '#000', style }) => (
   </Svg>
 );
 
-export const IconCheckCircle = ({ size = 24, color = '#000', style }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <Polyline points="22 4 12 14.01 9 11.01" />
-  </Svg>
-);
-
 export const IconRoute = ({ size = 24, color = '#000', style }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <Circle cx="6" cy="19" r="3" />
@@ -83,25 +59,10 @@ export const IconRoute = ({ size = 24, color = '#000', style }) => (
   </Svg>
 );
 
-export const IconSignal = ({ size = 24, color = '#000', style }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <Path d="M5 12.55a11 11 0 0 1 14.08 0" />
-    <Path d="M1.42 9a16 16 0 0 1 21.16 0" />
-    <Path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-    <Circle cx="12" cy="20" r="1" />
-  </Svg>
-);
-
 export const IconBattery = ({ size = 24, color = '#000', style }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <Rect x="1" y="6" width="18" height="12" rx="2" />
     <Line x1="23" y1="13" x2="23" y2="11" />
-  </Svg>
-);
-
-export const IconShield = ({ size = 24, color = '#000', style }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
-    <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </Svg>
 );
 
@@ -195,6 +156,69 @@ export const IconLock = ({ size = 24, color = '#000', style }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
     <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </Svg>
+);
+
+// Add these to mobile/src/components/Icons.js
+
+export const IconShield = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </Svg>
+);
+
+export const IconCheckCircle = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <Polyline points="22 4 12 14.01 9 11.01" />
+  </Svg>
+);
+
+export const IconLogo = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+    <Line x1="8" y1="2" x2="8" y2="18" />
+    <Line x1="16" y1="6" x2="16" y2="22" />
+  </Svg>
+);
+
+export const IconSignal = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M2 20h.01" />
+    <Path d="M7 20v-4" />
+    <Path d="M12 20v-8" />
+    <Path d="M17 20V8" />
+    <Path d="M22 4v16" />
+  </Svg>
+);
+
+export const IconCrosshair = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Circle cx="12" cy="12" r="10" />
+    <Line x1="22" y1="12" x2="18" y2="12" />
+    <Line x1="6" y1="12" x2="2" y2="12" />
+    <Line x1="12" y1="6" x2="12" y2="2" />
+    <Line x1="12" y1="22" x2="12" y2="18" />
+  </Svg>
+);
+
+export const IconSparkle = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z" />
+  </Svg>
+);
+
+export const IconClose = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Line x1="18" y1="6" x2="6" y2="18" />
+    <Line x1="6" y1="6" x2="18" y2="18" />
+  </Svg>
+);
+
+export const IconArrowRight = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Line x1="5" y1="12" x2="19" y2="12" />
+    <Polyline points="12 5 19 12 12 19" />
   </Svg>
 );
 

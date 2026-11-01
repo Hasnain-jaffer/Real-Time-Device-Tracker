@@ -1,179 +1,147 @@
 // mobile/src/screens/BusesScreen.js
+import { useState, useEffect, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useLiveBuses } from '../context/LiveBusesContext';
 import { IconBus, IconSearch } from '../components/Icons';
-
-// Temporary mock data
-const mockBuses = [
-  { _id: '1', busNumber: 'BUS-001', routeName: 'Route A - North Campus', status: 'active', driverName: 'John Doe' },
-  { _id: '2', busNumber: 'BUS-002', routeName: 'Route B - South Campus', status: 'delayed', driverName: 'Jane Smith' },
-  { _id: '3', busNumber: 'BUS-003', routeName: 'Route C - East Campus', status: 'idle', driverName: 'Mike Johnson' },
-];
 
 export default function BusesScreen({ navigation }) {
   const { colors } = useTheme();
+  const { buses, liveBuses } = useLiveBuses();
   const [search, setSearch] = useState('');
-  const [filtered, setFiltered] = useState(mockBuses);
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'online' | 'offline'
 
-  useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(mockBuses);
-    } else {
-      const q = search.toLowerCase();
-      setFiltered(
-        mockBuses.filter(
-          (b) =>
-            b.busNumber?.toLowerCase().includes(q) ||
-            b.routeName?.toLowerCase().includes(q) ||
-            b.driverName?.toLowerCase().includes(q)
-        )
-      );
-    }
-  }, [search]);
+  const filtered = useMemo(() => {
+    return buses.filter((d) => {
+      const matchesSearch =
+        d.name?.toLowerCase().includes(search.toLowerCase()) ||
+        d.identifier?.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = 
+        statusFilter === 'all' || 
+        (statusFilter === 'online' && d.isLive) ||
+        (statusFilter === 'offline' && !d.isLive);
+      return matchesSearch && matchesStatus;
+    });
+  }, [buses, search, statusFilter]);
 
-  const getStatusColor = (status) => {
-    if (status === 'active') return colors.badgeSuccessBg;
-    if (status === 'delayed') return colors.badgeWarningBg;
-    return colors.badgeNeutralBg;
+  const onlineCount = buses.filter((d) => d.isLive).length;
+
+  const cardShadow = {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 2,
   };
 
-  const getStatusText = (status) => {
-    if (status === 'active') return colors.badgeSuccessText;
-    if (status === 'delayed') return colors.badgeWarningText;
-    return colors.badgeNeutralText;
+  const card = {
+    backgroundColor: colors.bgSurface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    ...cardShadow,
   };
+
+  const filterOptions = [
+    { key: 'all', label: 'All', dot: null },
+    { key: 'online', label: 'Online', dot: colors.accent },
+    { key: 'offline', label: 'Offline', dot: colors.textMuted },
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgPage }}>
-      {/* Search Bar */}
+      {/* Header */}
       <View style={{ padding: 16, paddingBottom: 8 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: colors.bgSurface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingHorizontal: 12,
-          }}
-        >
-          <IconSearch size={18} color={colors.textMuted} />
+        <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>Devices</Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
+          {buses.length} registered · {onlineCount} online right now
+        </Text>
+      </View>
+
+      {/* Search + Filters */}
+      <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgSurface,
+          borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12,
+          ...cardShadow,
+        }}>
+          <IconSearch size={16} color={colors.textMuted} />
           <TextInput
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              paddingHorizontal: 10,
-              fontSize: 15,
-              color: colors.textPrimary,
-            }}
-            placeholder="Search buses..."
+            style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 10, fontSize: 14, color: colors.textPrimary }}
+            placeholder="Search by name or route…"
             placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={setSearch}
           />
         </View>
-      </View>
 
-      {/* Mock Status */}
-      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 8,
-            backgroundColor: colors.badgeSuccessBg,
-            alignSelf: 'flex-start',
-          }}
-        >
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: colors.badgeSuccessText,
-              marginRight: 6,
-            }}
-          />
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: '600',
-              color: colors.badgeSuccessText,
-            }}
-          >
-            Demo Mode
-          </Text>
+        <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
+          {filterOptions.map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              onPress={() => setStatusFilter(option.key)}
+              style={{
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
+                backgroundColor: statusFilter === option.key ? colors.accent : colors.bgSurface,
+                borderWidth: statusFilter === option.key ? 0 : 1,
+                borderColor: colors.border,
+                ...cardShadow,
+              }}
+            >
+              {option.dot && (
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: option.dot, marginRight: 6 }} />
+              )}
+              <Text style={{
+                fontSize: 12, fontWeight: '600',
+                color: statusFilter === option.key ? '#fff' : colors.textSecondary,
+              }}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
       {/* Bus List */}
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 16, paddingTop: 8 }}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, paddingTop: 4 }}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={{
-              backgroundColor: colors.bgSurface,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: colors.border,
-              padding: 16,
-              marginBottom: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
+            style={[card, { marginBottom: 10, flexDirection: 'row', alignItems: 'center' }]}
+            onPress={() => item.isLive && navigation.navigate('Live Map', { busId: item.id })}
           >
-            {/* Bus Icon */}
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                backgroundColor: colors.accent + '20',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12,
-              }}
-            >
-              <IconBus size={24} color={colors.accent} />
+            <View style={{
+              width: 48, height: 48, borderRadius: 12,
+              backgroundColor: item.isLive ? colors.accentBg : colors.bgPage,
+              alignItems: 'center', justifyContent: 'center', marginRight: 12,
+            }}>
+              <IconBus size={22} color={item.isLive ? colors.accent : colors.textMuted} />
             </View>
-
-            {/* Info */}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary }}>
-                {item.busNumber}
-              </Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-                {item.routeName}
-              </Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>{item.name}</Text>
               <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                Driver: {item.driverName}
+                {item.identifier || 'No identifier'}
+                {item.lastSeenAt ? ` · Last seen ${new Date(item.lastSeenAt).toLocaleTimeString()}` : ''}
               </Text>
             </View>
-
-            {/* Status Badge */}
-            <View
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 999,
-                backgroundColor: getStatusColor(item.status),
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: '600',
-                  color: getStatusText(item.status),
-                  textTransform: 'capitalize',
-                }}
-              >
-                {item.status}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+              backgroundColor: item.isLive ? colors.badgeSuccessBg : colors.bgPage,
+            }}>
+              <View style={{
+                width: 6, height: 6, borderRadius: 3, marginRight: 4,
+                backgroundColor: item.isLive ? colors.badgeSuccessText : colors.textMuted,
+              }} />
+              <Text style={{
+                fontSize: 11, fontWeight: '600',
+                color: item.isLive ? colors.badgeSuccessText : colors.textMuted,
+              }}>
+                {item.isLive ? 'Online' : 'Offline'}
               </Text>
             </View>
           </TouchableOpacity>
@@ -182,7 +150,10 @@ export default function BusesScreen({ navigation }) {
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
             <IconBus size={48} color={colors.textMuted} />
             <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginTop: 16 }}>
-              {search ? 'No buses match your search' : 'No buses available'}
+              {search ? 'No devices match your search' : 'No buses registered yet'}
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>
+              {search ? 'Try adjusting your filters' : 'Get started by registering your first bus'}
             </Text>
           </View>
         }

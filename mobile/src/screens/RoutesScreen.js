@@ -1,11 +1,12 @@
 // mobile/src/screens/RoutesScreen.js
-import { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Keyboard } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute  } from '@react-navigation/native';
 import apiClient from '../lib/apiClient';
 import { useTheme } from '../context/ThemeContext';
 import { useLiveBuses } from '../context/LiveBusesContext';
 import { IconBus, IconSparkle, IconClose, IconMapPin, IconArrowRight } from '../components/Icons';
+import { openLiveMap } from '../navigation/navigationRef';
+import { useEffect, useMemo, useState } from 'react';
 
 function Group({ title, colors, children }) {
   return (
@@ -20,6 +21,7 @@ function Group({ title, colors, children }) {
 
 export default function RoutesScreen() {
   const navigation = useNavigation();
+  const routeParams = useRoute().params;
   const { colors } = useTheme();
   const { routes, buses, loading, error, refresh } = useLiveBuses();
 
@@ -41,17 +43,12 @@ export default function RoutesScreen() {
 
   const openRoute = (routeId, routeName) => navigation.navigate('RouteDetail', { routeId, routeName });
 
-  function openBus(result) {
-    const live = buses.find((b) => b.id === result._id);
-    if (live?.isLive && live.latitude != null) {
-      navigation.navigate('Live Map', { busId: result._id });
-    } else if (result.routeId) {
-      openRoute(result.routeId, routes.find((r) => r._id === result.routeId)?.name);
-    }
+    function openBus(result) {
+    navigation.navigate('BusDetail', { busId: result._id, busName: result.name });
   }
 
-  async function handleSearch() {
-    const q = query.trim();
+    async function handleSearch(text) {
+    const q = (typeof text === 'string' ? text : query).trim();
     if (!q) return;
     Keyboard.dismiss();
     setAiBusy(true);
@@ -64,6 +61,13 @@ export default function RoutesScreen() {
       setAiBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (routeParams?.query) {
+      setQuery(routeParams.query);
+      handleSearch(routeParams.query);
+    }
+  }, [routeParams?.nonce]);
 
   async function onRefresh() {
     setRefreshing(true);

@@ -1,76 +1,43 @@
-// mobile/src/navigation/RootNavigator.js
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useNotifications } from '../context/NotificationsContext';
-import DrawerContent from '../components/DrawerContent';
-import { IconMenu, IconBell } from '../components/Icons';
-
-// Screens
+import { navigationRef } from './navigationRef';
+import AppHeader from '../components/AppHeader';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import LiveMapScreen from '../screens/LiveMapScreen';
 import RoutesScreen from '../screens/RoutesScreen';
 import RouteDetailScreen from '../screens/RouteDetailScreen';
 import AlertsScreen from '../screens/AlertsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import BusesScreen from '../screens/BusesScreen';
+import BusDetailScreen from '../screens/BusDetailScreen';
 
-const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const TAB_ICONS = {
   Home: 'home-outline',
-  'Live Map': 'map-outline',
   Buses: 'bus-outline',
-  Routes: 'trail-sign-outline',
-  Alerts: 'notifications-outline',
-  Profile: 'person-outline',
+  'Live Map': 'map-outline',
+  History: 'time-outline',
 };
 
-// Header right: notification bell
-function HeaderRight({ navigation }) {
-  const { colors } = useTheme();
-  const { unreadCount } = useNotifications();
-  return (
-    <TouchableOpacity onPress={() => navigation.navigate('Alerts')} style={{ marginRight: 16, position: 'relative' }}>
-      <IconBell size={22} color="#FFFFFF" />
-      {unreadCount > 0 && (
-        <View style={{ position: 'absolute', top: -4, right: -6, backgroundColor: colors.critical, borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
-          <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
+// Filled in by the next updates
+const HistoryPlaceholder = () => <PlaceholderScreen title="History" />;
 
-// Header left: hamburger menu
-function HeaderLeft({ navigation }) {
-  return (
-    <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginLeft: 16 }}>
-      <IconMenu size={24} color="#FFFFFF" />
-    </TouchableOpacity>
-  );
-}
-
-function Tabs({ navigation }) {
+function Tabs() {
   const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: colors.bgSidebar },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: { fontWeight: '600' },
-        headerLeft: () => <HeaderLeft navigation={navigation} />,
-        headerRight: () => <HeaderRight navigation={navigation} />,
+        headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.bgSurface, borderTopColor: colors.border },
@@ -78,56 +45,38 @@ function Tabs({ navigation }) {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Live Map" component={LiveMapScreen} />
       <Tab.Screen name="Buses" component={BusesScreen} />
-      <Tab.Screen name="Routes" component={RoutesStack} options={{ headerShown: false }} />
-      <Tab.Screen name="Alerts" component={AlertsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Live Map" component={LiveMapScreen} />
+      <Tab.Screen name="History" component={HistoryPlaceholder} />
     </Tab.Navigator>
   );
 }
 
-function RoutesStack({ navigation }) {
+function AppStack() {
   const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bgSidebar },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: { fontWeight: '600' },
-        headerLeft: () => <HeaderLeft navigation={navigation} />,
-        headerRight: () => <HeaderRight navigation={navigation} />,
+        header: (props) => <AppHeader {...props} />,
         contentStyle: { backgroundColor: colors.bgPage },
       }}
     >
-      <Stack.Screen name="RoutesList" component={RoutesScreen} options={{ title: 'Routes' }} />
+      <Stack.Screen name="MainTabs" component={Tabs} />
+      <Stack.Screen name="Routes" component={RoutesScreen} options={{ title: 'Routes' }} />
       <Stack.Screen
         name="RouteDetail"
         component={RouteDetailScreen}
         options={({ route }) => ({ title: route.params?.routeName || 'Route' })}
       />
+      <Stack.Screen
+        name="BusDetail"
+        component={BusDetailScreen}
+        options={({ route }) => ({ title: route.params?.busName || 'Bus' })}
+      />
+      <Stack.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
     </Stack.Navigator>
-  );
-}
-
-function MainDrawer() {
-  const { colors } = useTheme();
-  return (
-    <Drawer.Navigator
-      drawerContent={(props) => <DrawerContent {...props} />}
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.bgSidebar },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: { fontWeight: '600' },
-        headerLeft: () => null,
-        drawerType: 'front',
-        drawerStyle: { width: 300 },
-      }}
-    >
-      <Drawer.Screen name="MainTabs" component={Tabs} options={{ headerShown: false }} />
-      <Drawer.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-      <Drawer.Screen name="History" component={PlaceholderScreen} options={{ title: 'History' }} />
-    </Drawer.Navigator>
   );
 }
 
@@ -157,9 +106,9 @@ export default function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} ref={navigationRef}>
       {user ? (
-        <MainDrawer />
+        <AppStack />
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />

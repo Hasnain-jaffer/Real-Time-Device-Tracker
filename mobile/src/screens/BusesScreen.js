@@ -1,163 +1,145 @@
-// mobile/src/screens/BusesScreen.js
-import { useState, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useLiveBuses } from '../context/LiveBusesContext';
-import { IconBus, IconSearch } from '../components/Icons';
+import { timeAgo } from '../utils/geo';
 
-export default function BusesScreen({ navigation }) {
+const FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'live', label: 'Live' },
+  { key: 'offline', label: 'Offline' },
+];
+
+export default function BusesScreen() {
+  const navigation = useNavigation();
   const { colors } = useTheme();
-  const { buses, liveBuses } = useLiveBuses();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'online' | 'offline'
+  const { buses, loading, error, refresh } = useLiveBuses();
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
-  const filtered = useMemo(() => {
-    return buses.filter((d) => {
-      const matchesSearch =
-        d.name?.toLowerCase().includes(search.toLowerCase()) ||
-        d.identifier?.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = 
-        statusFilter === 'all' || 
-        (statusFilter === 'online' && d.isLive) ||
-        (statusFilter === 'offline' && !d.isLive);
-      return matchesSearch && matchesStatus;
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const liveCount = buses.filter((b) => b.isLive).length;
+
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return buses.filter((b) => {
+      const matchesText =
+        !q ||
+        b.name.toLowerCase().includes(q) ||
+        (b.identifier || '').toLowerCase().includes(q) ||
+        (b.routeName || '').toLowerCase().includes(q);
+      const matchesFilter = filter === 'all' || (filter === 'live' ? b.isLive : !b.isLive);
+      return matchesText && matchesFilter;
     });
-  }, [buses, search, statusFilter]);
+  }, [buses, query, filter]);
 
-  const onlineCount = buses.filter((d) => d.isLive).length;
+  async function onRefresh() {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }
 
-  const cardShadow = {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 2,
-  };
+  const header = (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>Buses</Text>
+      <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+        {buses.length} registered · {liveCount} live right now
+      </Text>
 
-  const card = {
-    backgroundColor: colors.bgSurface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 16,
-    ...cardShadow,
-  };
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search by name, route or identifier"
+        placeholderTextColor={colors.textMuted}
+        style={{
+          marginTop: 14, backgroundColor: colors.bgSurface, borderColor: colors.border, borderWidth: 1,
+          borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: colors.textPrimary,
+        }}
+      />
 
-  const filterOptions = [
-    { key: 'all', label: 'All', dot: null },
-    { key: 'online', label: 'Online', dot: colors.accent },
-    { key: 'offline', label: 'Offline', dot: colors.textMuted },
-  ];
-
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.bgPage }}>
-      {/* Header */}
-      <View style={{ padding: 16, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>Devices</Text>
-        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-          {buses.length} registered · {onlineCount} online right now
-        </Text>
-      </View>
-
-      {/* Search + Filters */}
-      <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgSurface,
-          borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12,
-          ...cardShadow,
-        }}>
-          <IconSearch size={16} color={colors.textMuted} />
-          <TextInput
-            style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 10, fontSize: 14, color: colors.textPrimary }}
-            placeholder="Search by name or route…"
-            placeholderTextColor={colors.textMuted}
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-
-        <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
-          {filterOptions.map((option) => (
+      <View style={{ flexDirection: 'row', marginTop: 10 }}>
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
             <TouchableOpacity
-              key={option.key}
-              onPress={() => setStatusFilter(option.key)}
+              key={f.key}
+              onPress={() => setFilter(f.key)}
               style={{
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
-                backgroundColor: statusFilter === option.key ? colors.accent : colors.bgSurface,
-                borderWidth: statusFilter === option.key ? 0 : 1,
-                borderColor: colors.border,
-                ...cardShadow,
+                marginRight: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, borderWidth: 1,
+                borderColor: active ? colors.accent : colors.border, backgroundColor: active ? colors.accent : colors.bgSurface,
               }}
             >
-              {option.dot && (
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: option.dot, marginRight: 6 }} />
-              )}
-              <Text style={{
-                fontSize: 12, fontWeight: '600',
-                color: statusFilter === option.key ? '#fff' : colors.textSecondary,
-              }}>
-                {option.label}
-              </Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#FFFFFF' : colors.textSecondary }}>{f.label}</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          );
+        })}
       </View>
 
-      {/* Bus List */}
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16, paddingTop: 4 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[card, { marginBottom: 10, flexDirection: 'row', alignItems: 'center' }]}
-            onPress={() => item.isLive && navigation.navigate('Live Map', { busId: item.id })}
+      {!!error && <Text style={{ color: colors.critical, fontSize: 13, marginTop: 10 }}>{error}</Text>}
+    </View>
+  );
+
+  return (
+    <FlatList
+      style={{ flex: 1, backgroundColor: colors.bgPage }}
+      contentContainerStyle={{ padding: 16 }}
+      keyboardShouldPersistTaps="handled"
+      data={list}
+      keyExtractor={(b) => b.id}
+      ListHeaderComponent={header}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+      ListEmptyComponent={
+        <View style={{ alignItems: 'center', marginTop: 30 }}>
+          <Ionicons name="bus-outline" size={34} color={colors.textMuted} />
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginTop: 6 }}>
+            {loading ? 'Loading buses…' : buses.length === 0 ? 'No buses registered yet' : 'No buses match your search'}
+          </Text>
+        </View>
+      }
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('BusDetail', { busId: item.id, busName: item.name })}
+          activeOpacity={0.8}
+          style={{
+            flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgSurface, borderRadius: 14, padding: 14,
+            marginBottom: 10, borderWidth: 1, borderColor: item.isLive ? colors.accent + '88' : colors.border,
+          }}
+        >
+          <View
+            style={{
+              width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12,
+              backgroundColor: item.isLive ? colors.accent + '24' : colors.bgPage,
+            }}
           >
-            <View style={{
-              width: 48, height: 48, borderRadius: 12,
-              backgroundColor: item.isLive ? colors.accentBg : colors.bgPage,
-              alignItems: 'center', justifyContent: 'center', marginRight: 12,
-            }}>
-              <IconBus size={22} color={item.isLive ? colors.accent : colors.textMuted} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>{item.name}</Text>
-              <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                {item.identifier || 'No identifier'}
-                {item.lastSeenAt ? ` · Last seen ${new Date(item.lastSeenAt).toLocaleTimeString()}` : ''}
-              </Text>
-            </View>
-            <View style={{
-              flexDirection: 'row', alignItems: 'center',
-              paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
-              backgroundColor: item.isLive ? colors.badgeSuccessBg : colors.bgPage,
-            }}>
-              <View style={{
-                width: 6, height: 6, borderRadius: 3, marginRight: 4,
-                backgroundColor: item.isLive ? colors.badgeSuccessText : colors.textMuted,
-              }} />
-              <Text style={{
-                fontSize: 11, fontWeight: '600',
-                color: item.isLive ? colors.badgeSuccessText : colors.textMuted,
-              }}>
-                {item.isLive ? 'Online' : 'Offline'}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <IconBus size={48} color={colors.textMuted} />
-            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginTop: 16 }}>
-              {search ? 'No devices match your search' : 'No buses registered yet'}
+            <Ionicons name="bus" size={22} color={item.isLive ? colors.accent : colors.textMuted} />
+          </View>
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>{item.name}</Text>
+            <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }} numberOfLines={1}>
+              {[item.routeName, item.identifier].filter(Boolean).join(' · ') || 'No route assigned'}
             </Text>
-            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>
-              {search ? 'Try adjusting your filters' : 'Get started by registering your first bus'}
+            <Text style={{ fontSize: 11.5, color: colors.textMuted, marginTop: 2 }}>
+              {item.isLive ? 'Reporting live' : item.updatedAt ? `Last seen ${timeAgo(item.updatedAt, now)}` : 'Never seen'}
             </Text>
           </View>
-        }
-      />
-    </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: item.isLive ? colors.badgeSuccessBg : colors.bgPage }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: item.isLive ? colors.badgeSuccessText : colors.textMuted }}>
+                {item.isLive ? 'Live' : 'Offline'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginTop: 6 }} />
+          </View>
+        </TouchableOpacity>
+      )}
+    />
   );
 }

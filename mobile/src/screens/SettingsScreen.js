@@ -1,89 +1,43 @@
-// mobile/src/screens/SettingsScreen.js
-import { View, Text, TouchableOpacity, Switch, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import Constants from 'expo-constants';
+import LogoMark from '../components/LogoMark';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 import { useTheme } from '../context/ThemeContext';
-import { useNotifications } from '../context/NotificationsContext';
-import { IconSun, IconMoon, IconBell, IconInfo } from '../components/Icons';
+import { API_ORIGIN } from '../config';
 
 export default function SettingsScreen() {
-  const { colors, mode, setThemeMode, isDark } = useTheme();
-  const { unreadCount } = useNotifications();
+  const { colors } = useTheme();
+  const version = Constants.expoConfig?.version || '1.0.0';
 
-  const settings = [
-    {
-      icon: <IconSun size={20} color={colors.accent} />,
-      title: 'Appearance',
-      description: `Currently ${isDark ? 'Dark' : 'Light'} mode`,
-      action: (
-        <View style={{ flexDirection: 'row', backgroundColor: colors.bgPage, borderRadius: 8, padding: 2 }}>
-          {['light', 'dark', 'system'].map((m) => (
-            <TouchableOpacity
-              key={m}
-              onPress={() => setThemeMode(m)}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: mode === m ? colors.accent : 'transparent',
-              }}
-            >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: mode === m ? '#fff' : colors.textSecondary, textTransform: 'capitalize' }}>
-                {m}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ),
-    },
-    {
-      icon: <IconBell size={20} color={colors.accent} />,
-      title: 'Notifications',
-      description: unreadCount > 0 ? `${unreadCount} unread alerts` : 'All caught up',
-      action: (
-        <TouchableOpacity onPress={() => {}} style={{ paddingHorizontal: 12, paddingVertical: 6 }}>
-          <Text style={{ fontSize: 12, color: colors.accent, fontWeight: '600' }}>View all</Text>
-        </TouchableOpacity>
-      ),
-    },
-    {
-      icon: <IconInfo size={20} color={colors.accent} />,
-      title: 'About',
-      description: 'RoutePulse v1.0.0',
-      action: null,
-    },
-  ];
+  const card = {
+    backgroundColor: colors.bgSurface, borderColor: colors.border, borderWidth: 1,
+    borderRadius: 14, padding: 16, marginBottom: 14,
+  };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bgPage }} contentContainerStyle={{ padding: 16 }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginBottom: 16 }}>Settings</Text>
+      <View style={card}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>Appearance</Text>
+        <Text style={{ fontSize: 12.5, color: colors.textMuted, marginTop: 2, marginBottom: 12 }}>
+          Choose how RoutePulse looks. "System" follows your phone's setting.
+        </Text>
+        <ThemeSwitcher />
+      </View>
 
-      {settings.map((item, i) => (
-        <View
-          key={item.title}
-          style={{
-            backgroundColor: colors.bgSurface,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: colors.border,
-            padding: 16,
-            marginBottom: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}
-        >
-          <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.bgPage, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-            {item.icon}
+      <View style={card}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <LogoMark size={40} />
+          <View style={{ marginLeft: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary }}>RoutePulse</Text>
+            <Text style={{ fontSize: 12.5, color: colors.textMuted }}>Version {version}</Text>
           </View>
-          <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>{item.title}</Text>
-            <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>{item.description}</Text>
-          </View>
-          {item.action}
         </View>
-      ))}
-
-      <Text style={{ fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 24 }}>
-        RoutePulse - Final Year Project{'\n'}My Campus Ride
-      </Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 12, lineHeight: 19 }}>
+          Real-time university bus tracking with live locations, stop alerts and schedule delays.
+          Final year project, Sindh Agriculture University, Tandojam.
+        </Text>
+        <Text style={{ fontSize: 11.5, color: colors.textMuted, marginTop: 12 }}>Server: {API_ORIGIN}</Text>
+      </View>
     </ScrollView>
   );
 }

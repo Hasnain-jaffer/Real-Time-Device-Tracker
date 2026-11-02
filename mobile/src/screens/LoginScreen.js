@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { IconBus } from '../components/Icons';
+import LogoMark from '../components/LogoMark';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -43,8 +44,8 @@ export default function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPage }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
         <View style={{ alignItems: 'center', marginBottom: 28 }}>
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-            <IconBus size={28} color="#FFFFFF" />
+          <View style={{ marginBottom: 12 }}>
+            <LogoMark size={52} />
           </View>
           <Text style={{ fontSize: 24, fontWeight: '700', color: colors.textPrimary }}>RoutePulse</Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>Track your campus bus in real time</Text>

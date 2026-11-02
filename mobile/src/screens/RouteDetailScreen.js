@@ -9,6 +9,7 @@ import { useLiveBuses } from '../context/LiveBusesContext';
 import { useUserLocation } from '../context/LocationContext';
 import { formatDistance } from '../utils/geo';
 import { IconBus } from '../components/Icons';
+import { openLiveMap } from '../navigation/navigationRef';
 
 export default function RouteDetailScreen({ route }) {
   const { routeId } = route.params;
@@ -123,8 +124,7 @@ export default function RouteDetailScreen({ route }) {
             user={position}
             isDark={isDark}
             stops={mapStops}
-            onSelect={(id) => navigation.navigate('Live Map', { busId: id })}
-          />
+            onSelect={(id) => openLiveMap(id)}          />
         </View>
       )}
 
@@ -136,7 +136,7 @@ export default function RouteDetailScreen({ route }) {
               <TouchableOpacity
                 key={b.id}
                 disabled={!b.isLive || b.latitude == null}
-                onPress={() => navigation.navigate('Live Map', { busId: b.id })}
+                onPress={() => openLiveMap(b.id)}
                 style={{
                   marginRight: 8, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1,
                   borderColor: colors.border, backgroundColor: b.isLive ? colors.badgeSuccessBg : colors.bgSurface,

@@ -1,6 +1,6 @@
-// mobile/src/screens/HomeScreen.js
-import { useMemo, useState, useEffect } from 'react';
-import { View, Text, FlatList, RefreshControl, TouchableOpacity, Linking, TextInput, ScrollView } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, TextInput, Linking, Keyboard } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -8,9 +8,23 @@ import { useSocket } from '../context/SocketContext';
 import { useLiveBuses } from '../context/LiveBusesContext';
 import { useUserLocation } from '../context/LocationContext';
 import { useNotifications } from '../context/NotificationsContext';
-import apiClient from '../lib/apiClient';
-import { haversineMeters, formatDistance } from '../utils/geo';
-import { IconBus, IconSearch, IconBell, IconClock, IconShield, IconCheckCircle, IconChevronRight, IconMapPin } from '../components/Icons';
+import { haversineMeters, formatDistance, estimateEtaMinutes, formatEta, timeAgo } from '../utils/geo';
+import { notificationMeta } from '../utils/notificationMeta';
+import { goToScreen, openLiveMap } from '../navigation/navigationRef';
+
+function Stat({ icon, label, value, color, colors }) {
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: color + '22', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
+        <Ionicons name={icon} size={18} color={color} />
+      </View>
+      <View style={{ flexShrink: 1 }}>
+        <Text style={{ fontSize: 10.5, color: colors.textMuted }}>{label}</Text>
+        <Text style={{ fontSize: 14.5, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>{value}</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -19,34 +33,26 @@ export default function HomeScreen() {
   const { isConnected } = useSocket();
   const { buses, liveBuses, error, refresh } = useLiveBuses();
   const { position, status } = useUserLocation();
-  const { unreadCount } = useNotifications();
-  const [refreshing, setRefreshing] = useState(false);
+  const { items: alerts } = useNotifications();
+
   const [query, setQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [focusedBus, setFocusedBus] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const onlineCount = liveBuses.length;
-  const totalBuses = buses.length;
-
-  const nearby = useMemo(() => {
+  const withDistance = useMemo(() => {
     if (!position) return [];
     return liveBuses
       .map((b) => ({ ...b, distanceM: haversineMeters(position.latitude, position.longitude, b.latitude, b.longitude) }))
-      .sort((a, b) => a.distanceM - b.distanceM)
-      .slice(0, 3);
+      .sort((a, b) => a.distanceM - b.distanceM);
   }, [liveBuses, position]);
 
-  useEffect(() => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const q = query.toLowerCase();
-    const results = buses.filter(
-      (d) => d.name?.toLowerCase().includes(q) || d.identifier?.toLowerCase().includes(q)
-    );
-    setSearchResults(results);
-  }, [query, buses]);
+  const nearby = withDistance.slice(0, 3);
+  const hero = withDistance[0] || (liveBuses[0] ? { ...liveBuses[0], distanceM: null } : null);
+  const heroEta = hero && hero.distanceM != null ? estimateEtaMinutes(hero.distanceM, hero.speedKmh) : null;
+  const serviceAlerts = useMemo(
+    () => alerts.filter((n) => n.type === 'device-offline' || n.type === 'system-message').slice(0, 3),
+    [alerts]
+  );
+  const locationBlocked = status === 'denied' || status === 'services-off' || status === 'error';
 
   async function onRefresh() {
     setRefreshing(true);
@@ -54,248 +60,129 @@ export default function HomeScreen() {
     setRefreshing(false);
   }
 
-  const openOnMap = (busId) => navigation.navigate('Live Map', { busId });
+  function ask() {
+    const q = query.trim();
+    if (!q) return;
+    Keyboard.dismiss();
+    goToScreen('Routes', { query: q, nonce: Date.now() });
+    setQuery('');
+  }
 
-  const cardShadow = {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 2,
-  };
+  const card = { backgroundColor: colors.bgSurface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 14 };
+  const cardTitle = { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, color: colors.textMuted, marginBottom: 10 };
 
-  const card = {
-    backgroundColor: colors.bgSurface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    ...cardShadow,
-  };
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.bgPage }}
+      contentContainerStyle={{ padding: 16 }}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+    >
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>Welcome back, {user?.name?.split(' ')[0] || 'there'} 👋</Text>
+      <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 3 }}>
+        {liveBuses.length} bus{liveBuses.length !== 1 ? 'es' : ''} live · {isConnected ? 'all systems normal' : 'reconnecting…'}
+      </Text>
+      {!!error && <Text style={{ color: colors.critical, fontSize: 13, marginTop: 8 }}>{error}</Text>}
 
-  const locationBlocked = status === 'denied' || status === 'services-off' || status === 'error';
-
-  const StatItem = ({ icon: Icon, label, value, iconBg, iconColor }) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-        <Icon size={18} color={iconColor} />
+      <View style={[card, { flexDirection: 'row', marginTop: 16, paddingVertical: 14 }]}>
+        <Stat icon="bus-outline" label="Buses" value={buses.length} color={colors.accent} colors={colors} />
+        <Stat icon="radio-outline" label="Live now" value={`${liveBuses.length}/${buses.length}`} color={colors.eta} colors={colors} />
+        <Stat
+          icon="shield-checkmark-outline"
+          label="Service"
+          value={isConnected ? 'Operational' : 'Degraded'}
+          color={isConnected ? colors.accent : colors.critical}
+          colors={colors}
+        />
       </View>
-      <View>
-        <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '500' }}>{label}</Text>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 1 }}>{value}</Text>
-      </View>
-    </View>
-  );
 
-  const header = (
-    <View>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>
-            Welcome back, {user?.name?.split(' ')[0] || 'there'}
-          </Text>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-            {onlineCount} bus{onlineCount !== 1 ? 'es' : ''} live · {isConnected ? 'All systems normal' : 'Reconnecting…'}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Alerts')}
-          style={{
-            width: 40, height: 40, borderRadius: 12, backgroundColor: colors.bgSurface,
-            borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
-            ...cardShadow,
-          }}
-        >
-          <IconBell size={18} color={colors.textSecondary} />
-          {unreadCount > 0 && (
-            <View style={{
-              position: 'absolute', top: -4, right: -4, backgroundColor: colors.badgeEtaBg,
-              borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
-            }}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: colors.badgeEtaText }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-            </View>
-          )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={ask}
+          returnKeyType="search"
+          maxLength={200}
+          placeholder="Ask: which bus goes to the hospital?"
+          placeholderTextColor={colors.textMuted}
+          style={{ flex: 1, backgroundColor: colors.bgSurface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: colors.textPrimary }}
+        />
+        <TouchableOpacity onPress={ask} disabled={!query.trim()} style={{ marginLeft: 8, backgroundColor: colors.accent, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, opacity: query.trim() ? 1 : 0.6 }}>
+          <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13 }}>✨ Ask</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={{ marginBottom: 16 }}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgSurface,
-          borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12,
-          ...cardShadow,
-        }}>
-          <IconSearch size={16} color={colors.textMuted} />
-          <TextInput
-            style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 10, fontSize: 14, color: colors.textPrimary }}
-            placeholder="Search buses, routes, stops…"
-            placeholderTextColor={colors.textMuted}
-            value={query}
-            onChangeText={setQuery}
-          />
-        </View>
-        {searchResults.length > 0 && (
-          <View style={{
-            backgroundColor: colors.bgSurface, borderRadius: 12, borderWidth: 1, borderColor: colors.border,
-            marginTop: 8, overflow: 'hidden', ...cardShadow,
-          }}>
-            {searchResults.slice(0, 5).map((d) => (
-              <TouchableOpacity
-                key={d.id}
-                onPress={() => { setFocusedBus(d); setQuery(''); setSearchResults([]); }}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}
-              >
-                <Text style={{ fontSize: 14, color: colors.textPrimary }}>{d.name}</Text>
-                <Text style={{ fontSize: 12, color: d.isLive ? colors.accent : colors.textMuted }}>
-                  {d.isLive ? 'Live' : 'Offline'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
-
-      {/* Stats Strip */}
-      <View style={[card, { flexDirection: 'row', padding: 16, marginBottom: 16 }]}>
-        <StatItem
-          icon={IconBus}
-          label="Registered buses"
-          value={totalBuses}
-          iconBg={colors.accentBg}
-          iconColor={colors.accent}
-        />
-        <StatItem
-          icon={IconClock}
-          label="Online now"
-          value={`${onlineCount}/${totalBuses || 0}`}
-          iconBg={colors.badgeEtaBg}
-          iconColor={colors.badgeEtaText}
-        />
-        <StatItem
-          icon={IconShield}
-          label="Service status"
-          value={isConnected ? 'Operational' : 'Degraded'}
-          iconBg={isConnected ? colors.accentBg : 'rgba(185,74,58,0.1)'}
-          iconColor={isConnected ? colors.accent : colors.critical}
-        />
-      </View>
-
-      {/* Next Bus Card */}
-      <View style={[card, { marginBottom: 16 }]}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Your next bus
-          </Text>
-          {focusedBus?.isLive && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.badgeSuccessBg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.badgeSuccessText, marginRight: 4 }} />
-              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.badgeSuccessText }}>Live</Text>
-            </View>
-          )}
-        </View>
-
-        {focusedBus ? (
+      <View style={card}>
+        <Text style={cardTitle}>YOUR NEXT BUS</Text>
+        {hero ? (
           <>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary }}>{focusedBus.name}</Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-              {focusedBus.identifier || 'No identifier'}
-              {focusedBus.updatedAt ? ` · Updated ${new Date(focusedBus.updatedAt).toLocaleTimeString()}` : ''}
-            </Text>
-            <TouchableOpacity
-              onPress={() => openOnMap(focusedBus.id)}
-              style={{
-                backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12,
-                alignItems: 'center', marginTop: 16, flexDirection: 'row', justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Open live tracking</Text>
-              <IconChevronRight size={16} color="#fff" style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>{hero.name}</Text>
+                <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                  {[hero.routeName, hero.identifier].filter(Boolean).join(' · ') || 'No route assigned'}
+                </Text>
+              </View>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.badgeSuccessBg }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.badgeSuccessText }}>Live</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', marginTop: 14 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 10.5, color: colors.textMuted }}>Distance from you</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>{hero.distanceM != null ? formatDistance(hero.distanceM) : '—'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 10.5, color: colors.textMuted }}>ETA to you</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
+                  {hero.distanceM == null ? '—' : heroEta == null ? 'Stopped' : formatEta(heroEta)}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 10.5, color: colors.textMuted }}>Speed</Text>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>{hero.speedKmh != null ? `${Math.round(hero.speedKmh)} km/h` : '—'}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', marginTop: 14 }}>
+              <TouchableOpacity onPress={() => openLiveMap(hero.id)} style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginRight: 8 }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13.5 }}>Open live tracking</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('BusDetail', { busId: hero.id, busName: hero.name })} style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 11, alignItems: 'center' }}>
+                <Text style={{ color: colors.textPrimary, fontWeight: '600', fontSize: 13.5 }}>Bus details</Text>
+              </TouchableOpacity>
+            </View>
           </>
         ) : (
-          <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: colors.bgPage, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-              <IconBus size={24} color={colors.textMuted} />
-            </View>
-            <Text style={{ fontSize: 14, color: colors.textMuted }}>No buses registered yet</Text>
+          <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+            <Ionicons name="bus-outline" size={30} color={colors.textMuted} />
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginTop: 6 }}>
+              {buses.length === 0 ? 'No buses registered yet' : 'No buses are live right now'}
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>They appear here as soon as they start moving.</Text>
           </View>
         )}
       </View>
 
-      {/* Live Right Now */}
-      <View style={[card, { marginBottom: 16 }]}>
-        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
-          Live right now
-        </Text>
-        {liveBuses.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: colors.bgPage, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-              <IconBus size={24} color={colors.textMuted} />
-            </View>
-            <Text style={{ fontSize: 14, color: colors.textMuted }}>No buses live right now</Text>
-          </View>
-        ) : (
-          liveBuses.slice(0, 5).map((b, i) => (
-            <TouchableOpacity
-              key={b.id}
-              onPress={() => setFocusedBus(b)}
-              style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                paddingVertical: 10, paddingHorizontal: 8,
-                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border,
-                borderRadius: 8,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: colors.badgeSuccessBg, alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                  <IconBus size={14} color={colors.badgeSuccessText} />
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>{b.name}</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent, marginRight: 4 }} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.accent }}>Live</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-
-      {/* Buses Near You */}
-      <View style={[card, { marginBottom: 16 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <IconMapPin size={16} color={colors.accent} style={{ marginRight: 6 }} />
-          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Buses near you
-          </Text>
-        </View>
+      <View style={card}>
+        <Text style={cardTitle}>BUSES NEAR YOU</Text>
         {locationBlocked ? (
           <TouchableOpacity onPress={() => Linking.openSettings()}>
-            <Text style={{ fontSize: 13, color: colors.critical }}>
-              Location is off. Tap to open settings and allow it, then come back.
-            </Text>
+            <Text style={{ fontSize: 13, color: colors.critical }}>Location is off. Tap to open settings and allow it, then come back.</Text>
           </TouchableOpacity>
         ) : !position ? (
           <Text style={{ fontSize: 13, color: colors.textMuted }}>Finding your location…</Text>
         ) : nearby.length === 0 ? (
-          <Text style={{ fontSize: 13, color: colors.textMuted }}>No buses currently online nearby.</Text>
+          <Text style={{ fontSize: 13, color: colors.textMuted }}>No buses are live right now.</Text>
         ) : (
           nearby.map((b, i) => (
             <TouchableOpacity
               key={b.id}
-              onPress={() => openOnMap(b.id)}
-              style={{
-                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10,
-                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border,
-              }}
+              onPress={() => openLiveMap(b.id)}
+              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <IconBus size={16} color={colors.accent} style={{ marginRight: 8 }} />
-                <View>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>{b.name}</Text>
-                  {!!b.routeName && <Text style={{ fontSize: 12, color: colors.textMuted }} numberOfLines={1}>{b.routeName}</Text>}
-                </View>
+              <View style={{ flexShrink: 1, paddingRight: 8 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>🚌 {b.name}</Text>
+                {!!b.routeName && <Text style={{ fontSize: 12, color: colors.textMuted }} numberOfLines={1}>{b.routeName}</Text>}
               </View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accent }}>{formatDistance(b.distanceM)}</Text>
             </TouchableOpacity>
@@ -303,56 +190,54 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Service Alerts */}
-      <View style={[card, { marginBottom: 16 }]}>
-        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
-          Service alerts
-        </Text>
-        <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-          <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: colors.badgeSuccessBg, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-            <IconCheckCircle size={24} color={colors.badgeSuccessText} />
-          </View>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textMuted }}>No active alerts</Text>
-          <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>Everything is running smoothly</Text>
-        </View>
+      <View style={card}>
+        <Text style={cardTitle}>LIVE RIGHT NOW</Text>
+        {liveBuses.length === 0 ? (
+          <Text style={{ fontSize: 13, color: colors.textMuted }}>No buses live right now.</Text>
+        ) : (
+          liveBuses.slice(0, 4).map((b, i) => (
+            <TouchableOpacity
+              key={b.id}
+              onPress={() => navigation.navigate('BusDetail', { busId: b.id, busName: b.name })}
+              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>{b.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent, marginRight: 6 }} />
+                <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.accent }}>Live</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
-      {/* All Buses Section */}
-      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 8, marginBottom: 12 }}>All buses</Text>
-    </View>
-  );
-
-  return (
-    <FlatList
-      style={{ flex: 1, backgroundColor: colors.bgPage }}
-      contentContainerStyle={{ padding: 16 }}
-      data={buses}
-      keyExtractor={(b) => b.id}
-      ListHeaderComponent={header}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-      ListEmptyComponent={<Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: 12 }}>No buses registered yet.</Text>}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          disabled={!item.isLive || item.latitude == null}
-          onPress={() => openOnMap(item.id)}
-          style={[card, { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-        >
-          <View style={{ flexShrink: 1, paddingRight: 8, flexDirection: 'row', alignItems: 'center' }}>
-            <IconBus size={18} color={item.isLive ? colors.accent : colors.textMuted} style={{ marginRight: 10 }} />
-            <View>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textPrimary }}>{item.name}</Text>
-              <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                {[item.routeName, item.identifier].filter(Boolean).join(' · ') || 'No route assigned'}
-              </Text>
-            </View>
+      <View style={card}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <Text style={[cardTitle, { marginBottom: 0 }]}>SERVICE ALERTS</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Alerts')}>
+            <Text style={{ fontSize: 12.5, fontWeight: '600', color: colors.accent }}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        {serviceAlerts.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingVertical: 6 }}>
+            <Ionicons name="checkmark-circle-outline" size={28} color={colors.accent} />
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>No active alerts</Text>
           </View>
-          <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: item.isLive ? colors.badgeSuccessBg : colors.bgPage }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: item.isLive ? colors.badgeSuccessText : colors.textMuted }}>
-              {item.isLive ? 'Live' : 'Offline'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      )}
-    />
+        ) : (
+          serviceAlerts.map((n, i) => {
+            const meta = notificationMeta(n.type, colors);
+            return (
+              <View key={n._id} style={{ flexDirection: 'row', paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}>
+                <Text style={{ fontSize: 18, marginRight: 10 }}>{meta.icon}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13.5, fontWeight: '600', color: colors.textPrimary }}>{n.title}</Text>
+                  <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>{timeAgo(new Date(n.createdAt).getTime())}</Text>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
+    </ScrollView>
   );
 }

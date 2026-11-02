@@ -1,10 +1,10 @@
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LogoMark from './LogoMark';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useNotifications } from '../context/NotificationsContext';
+import { IconBell, IconMenu, IconChevronLeft } from './Icons';
 
 export default function AppHeader({ navigation, route, options, back }) {
   const { colors } = useTheme();
@@ -20,7 +20,7 @@ export default function AppHeader({ navigation, route, options, back }) {
       <View style={{ height: 54, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 }}>
         {back ? (
           <TouchableOpacity onPress={navigation.goBack} hitSlop={hit} accessibilityLabel="Go back" style={{ marginRight: 8 }}>
-            <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
+            <IconChevronLeft size={24} color="#FFFFFF" />
           </TouchableOpacity>
         ) : (
           <View style={{ marginRight: 10 }}>
@@ -33,21 +33,16 @@ export default function AppHeader({ navigation, route, options, back }) {
         </Text>
 
         <TouchableOpacity onPress={() => navigation.navigate('Alerts')} hitSlop={hit} accessibilityLabel="Alerts" style={{ marginRight: 18 }}>
-          <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
+          <IconBell size={22} color="#FFFFFF" />
           {unreadCount > 0 && (
-            <View
-              style={{
-                position: 'absolute', top: -5, right: -8, minWidth: 17, height: 17, borderRadius: 9,
-                backgroundColor: colors.critical, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
-              }}
-            >
+            <View style={{ position: 'absolute', top: -5, right: -8, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: colors.critical, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
               <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity onPress={openDrawer} hitSlop={hit} accessibilityLabel="Open menu">
-          <Ionicons name="menu" size={28} color="#FFFFFF" />
+          <IconMenu size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </View>

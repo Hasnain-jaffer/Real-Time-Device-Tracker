@@ -222,6 +222,19 @@ export const IconArrowRight = ({ size = 24, color = '#000', style }) => (
   </Svg>
 );
 
+export const IconSmartphone = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+    <Line x1="12" y1="18" x2="12.01" y2="18" />
+  </Svg>
+);
+
+export const IconChevronLeft = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Polyline points="15 18 9 12 15 6" />
+  </Svg>
+);
+
 // Notification type icons
 export const NotificationIcon = ({ type, size = 22, color = '#000', style }) => {
   const icons = {

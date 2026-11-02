@@ -14,7 +14,7 @@ import InAppBanner from './src/components/InAppBanner';
 function ThemedStatusBar() {
   const { user } = useAuth();
   const { isDark } = useTheme();
-  // Signed in: the header is dark green, so the icons are light. Login follows the page colour.
+  // Signed in: the header is dark green, so light icons. Login follows the page colour.
   return <StatusBar style={user || isDark ? 'light' : 'dark'} />;
 }
 

@@ -2,34 +2,27 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { navigationRef } from './navigationRef';
 import AppHeader from '../components/AppHeader';
+import { IconHome, IconBus, IconMap, IconClock } from '../components/Icons';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
+import BusesScreen from '../screens/BusesScreen';
 import LiveMapScreen from '../screens/LiveMapScreen';
 import RoutesScreen from '../screens/RoutesScreen';
 import RouteDetailScreen from '../screens/RouteDetailScreen';
+import BusDetailScreen from '../screens/BusDetailScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
-import BusesScreen from '../screens/BusesScreen';
-import BusDetailScreen from '../screens/BusDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const TAB_ICONS = {
-  Home: 'home-outline',
-  Buses: 'bus-outline',
-  'Live Map': 'map-outline',
-  History: 'time-outline',
-};
-
-// Filled in by the next updates
+const TAB_ICONS = { Home: IconHome, Buses: IconBus, 'Live Map': IconMap, History: IconClock };
 const HistoryPlaceholder = () => <PlaceholderScreen title="History" />;
 
 function Tabs() {
@@ -41,7 +34,10 @@ function Tabs() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.bgSurface, borderTopColor: colors.border },
-        tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />,
+        tabBarIcon: ({ color, size }) => {
+          const TabIcon = TAB_ICONS[route.name];
+          return TabIcon ? <TabIcon size={size} color={color} /> : null;
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />

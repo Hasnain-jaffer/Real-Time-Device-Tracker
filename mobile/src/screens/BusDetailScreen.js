@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiClient from '../lib/apiClient';
 import { useTheme } from '../context/ThemeContext';
@@ -9,6 +8,7 @@ import { useNotifications } from '../context/NotificationsContext';
 import { openLiveMap } from '../navigation/navigationRef';
 import { timeAgo } from '../utils/geo';
 import { notificationMeta } from '../utils/notificationMeta';
+import { IconBus, IconSparkle, IconSignal, IconBattery, NotificationIcon } from '../components/Icons';
 
 const SIGNAL_LABELS = ['No signal', 'Extremely weak', 'Very weak', 'Good', 'Strong'];
 const BATTERY_LABELS = ['No power', 'Extremely low', 'Very low', 'Low', 'Medium', 'High', 'Very high'];
@@ -127,10 +127,7 @@ export default function BusDetailScreen({ route }) {
   const isLive = live ? live.isLive : device.status === 'online';
   const lat = live?.latitude ?? device.lastLocation?.latitude;
   const lng = live?.longitude ?? device.lastLocation?.longitude;
-  const lastSeenMs = Math.max(
-    device.lastSeenAt ? new Date(device.lastSeenAt).getTime() : 0,
-    live?.updatedAt || 0
-  );
+  const lastSeenMs = Math.max(device.lastSeenAt ? new Date(device.lastSeenAt).getTime() : 0, live?.updatedAt || 0);
   const hb = heartbeat(lastSeenMs, now);
   const routeId = live?.routeId || device.routeId;
   const routeName = live?.routeName || '';
@@ -155,8 +152,8 @@ export default function BusDetailScreen({ route }) {
   ];
 
   const hardware = [
-    { label: 'Signal strength', text: SIGNAL_LABELS[health.gsmSignal], level: health.gsmSignal, max: 4 },
-    { label: 'Battery level', text: BATTERY_LABELS[health.batteryLevel], level: health.batteryLevel, max: 6 },
+    { label: 'Signal strength', text: SIGNAL_LABELS[health.gsmSignal], level: health.gsmSignal, max: 4, Icon: IconSignal },
+    { label: 'Battery level', text: BATTERY_LABELS[health.batteryLevel], level: health.batteryLevel, max: 6, Icon: IconBattery },
   ];
 
   return (
@@ -169,7 +166,7 @@ export default function BusDetailScreen({ route }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
             <View style={{ width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: isLive ? colors.accent + '24' : colors.bgPage }}>
-              <Ionicons name="bus" size={24} color={isLive ? colors.accent : colors.textMuted} />
+              <IconBus size={24} color={isLive ? colors.accent : colors.textMuted} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: colors.textPrimary }} numberOfLines={2}>{device.name}</Text>
@@ -210,8 +207,9 @@ export default function BusDetailScreen({ route }) {
         <View style={[card, { borderLeftWidth: 4, borderLeftColor: colors.eta }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>Delay summary</Text>
-            <View style={{ paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: colors.eta + '26' }}>
-              <Text style={{ fontSize: 10.5, fontWeight: '600', color: colors.eta }}>{delay.source === 'ai' ? '✨ AI-written' : 'Auto summary'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: colors.eta + '26' }}>
+              {delay.source === 'ai' && <IconSparkle size={10} color={colors.eta} style={{ marginRight: 4 }} />}
+              <Text style={{ fontSize: 10.5, fontWeight: '600', color: colors.eta }}>{delay.source === 'ai' ? 'AI-written' : 'Auto summary'}</Text>
             </View>
           </View>
           <Text style={{ fontSize: 14, color: colors.textPrimary, lineHeight: 20 }}>{delay.note}</Text>
@@ -225,7 +223,10 @@ export default function BusDetailScreen({ route }) {
                 Scheduled {delay.metrics.scheduledTime} · Arrived {delay.metrics.arrivedAt} · Delay {delay.metrics.delayMinutes} min
               </Text>
               <Text style={{ fontSize: 12, color: colors.textMuted }}>Avg moving speed today: {delay.metrics.todayAvgMovingSpeedKmh ?? 'n/a'} km/h</Text>
-              <Text style={{ fontSize: 12, color: colors.textMuted }}>Usual (last 7 days): {delay.metrics.usualAvgMovingSpeedKmh ?? 'no history yet'} km/h</Text>
+              {/* FIX: backend returns last7DaysAvgMovingSpeedKmh, not usualAvgMovingSpeedKmh */}
+              <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                Avg moving speed, previous 7 days: {delay.metrics.last7DaysAvgMovingSpeedKmh ?? 'no history yet'} km/h
+              </Text>
             </View>
           )}
         </View>
@@ -275,11 +276,15 @@ export default function BusDetailScreen({ route }) {
         <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 14, marginBottom: 8 }}>Tracker hardware</Text>
         <View style={{ flexDirection: 'row' }}>
           {hardware.map((h, i) => {
+            const HwIcon = h.Icon;
             const ratio = h.text ? h.level / h.max : 0;
             const barColor = ratio >= 0.5 ? colors.badgeSuccessText : ratio >= 0.25 ? colors.eta : colors.critical;
             return (
               <View key={h.label} style={{ flex: 1, backgroundColor: colors.bgPage, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 10, marginRight: i === 0 ? 8 : 0 }}>
-                <Text style={{ fontSize: 11.5, color: colors.textMuted }}>{h.label}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <HwIcon size={13} color={colors.textMuted} style={{ marginRight: 5 }} />
+                  <Text style={{ fontSize: 11.5, color: colors.textMuted }}>{h.label}</Text>
+                </View>
                 <Text style={{ fontSize: 13.5, fontWeight: '700', color: h.text ? colors.textPrimary : colors.textMuted, marginTop: 2 }}>{h.text || 'No tracker data'}</Text>
                 {!!h.text && (
                   <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.border, marginTop: 8 }}>
@@ -320,10 +325,13 @@ export default function BusDetailScreen({ route }) {
           <Text style={{ fontSize: 13, color: colors.textMuted, textAlign: 'center', paddingVertical: 8 }}>No notifications for this bus yet.</Text>
         ) : (
           busNotifications.map((n, i) => {
-            const meta2 = notificationMeta(n.type, colors);
+            const meta = notificationMeta(n.type, colors);
             return (
               <View key={n._id} style={{ flexDirection: 'row', paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}>
-                <Text style={{ fontSize: 18, marginRight: 10 }}>{meta2.icon}</Text>
+                {/* FIX: was <Text>{meta2.icon}</Text> which printed a raw string/emoji */}
+                <View style={{ marginRight: 10, marginTop: 1 }}>
+                  <NotificationIcon type={n.type} size={18} color={meta.color} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13.5, fontWeight: '600', color: colors.textPrimary }}>{n.title}</Text>
                   <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginTop: 1 }}>{n.message}</Text>

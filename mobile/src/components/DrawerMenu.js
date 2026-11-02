@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LogoMark from './LogoMark';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -9,16 +8,17 @@ import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useNotifications } from '../context/NotificationsContext';
 import { navigationRef, goToTab, goToScreen } from '../navigation/navigationRef';
+import { IconHome, IconBus, IconMap, IconClock, IconRoute, IconBell, IconSettings, IconUser, IconLogout } from './Icons';
 
 const ITEMS = [
-  { label: 'Home', icon: 'home-outline', route: 'Home', tab: true },
-  { label: 'Buses', icon: 'bus-outline', route: 'Buses', tab: true },
-  { label: 'Live Map', icon: 'map-outline', route: 'Live Map', tab: true },
-  { label: 'History', icon: 'time-outline', route: 'History', tab: true },
-  { label: 'Routes', icon: 'trail-sign-outline', route: 'Routes' },
-  { label: 'Alerts', icon: 'notifications-outline', route: 'Alerts', badge: true },
-  { label: 'Settings', icon: 'settings-outline', route: 'Settings' },
-  { label: 'Profile', icon: 'person-outline', route: 'Profile' },
+  { label: 'Home', Icon: IconHome, route: 'Home', tab: true },
+  { label: 'Buses', Icon: IconBus, route: 'Buses', tab: true },
+  { label: 'Live Map', Icon: IconMap, route: 'Live Map', tab: true },
+  { label: 'History', Icon: IconClock, route: 'History', tab: true },
+  { label: 'Routes', Icon: IconRoute, route: 'Routes' },
+  { label: 'Alerts', Icon: IconBell, route: 'Alerts', badge: true },
+  { label: 'Settings', Icon: IconSettings, route: 'Settings' },
+  { label: 'Profile', Icon: IconUser, route: 'Profile' },
 ];
 
 const PANEL_WIDTH = Math.min(310, Dimensions.get('window').width * 0.82);
@@ -68,12 +68,7 @@ export default function DrawerMenu() {
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000', opacity: backdrop }]} />
         <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel="Close menu" />
 
-        <Animated.View
-          style={{
-            position: 'absolute', top: 0, bottom: 0, left: 0, width: PANEL_WIDTH,
-            backgroundColor: colors.bgSurface, transform: [{ translateX }],
-          }}
-        >
+        <Animated.View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: PANEL_WIDTH, backgroundColor: colors.bgSurface, transform: [{ translateX }] }}>
           <View style={{ backgroundColor: colors.bgSidebar, paddingTop: insets.top + 16, paddingBottom: 16, paddingHorizontal: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <LogoMark size={34} />
@@ -86,16 +81,14 @@ export default function DrawerMenu() {
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 10 }}>
             {ITEMS.map((item) => {
               const active = current === item.route;
+              const ItemIcon = item.Icon;
               return (
                 <TouchableOpacity
                   key={item.route}
                   onPress={() => go(item)}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12,
-                    borderRadius: 12, marginBottom: 2, backgroundColor: active ? colors.accent + '24' : 'transparent',
-                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12, marginBottom: 2, backgroundColor: active ? colors.accent + '24' : 'transparent' }}
                 >
-                  <Ionicons name={item.icon} size={22} color={active ? colors.accent : colors.textSecondary} />
+                  <ItemIcon size={22} color={active ? colors.accent : colors.textSecondary} />
                   <Text style={{ flex: 1, marginLeft: 14, fontSize: 15, fontWeight: active ? '700' : '500', color: active ? colors.accent : colors.textPrimary }}>
                     {item.label}
                   </Text>
@@ -112,7 +105,7 @@ export default function DrawerMenu() {
           <View style={{ padding: 14, paddingBottom: insets.bottom + 14, borderTopWidth: 1, borderTopColor: colors.border }}>
             <ThemeSwitcher />
             <TouchableOpacity onPress={handleLogout} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14, paddingVertical: 6 }}>
-              <Ionicons name="log-out-outline" size={22} color={colors.critical} />
+              <IconLogout size={22} color={colors.critical} />
               <Text style={{ marginLeft: 14, fontSize: 15, fontWeight: '600', color: colors.critical }}>Log out</Text>
             </TouchableOpacity>
           </View>

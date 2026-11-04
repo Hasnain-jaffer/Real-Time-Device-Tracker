@@ -12,6 +12,7 @@ body{background:#d9d3c4}
 .play-pin::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid #5E8C61;animation:pulse 1.6s ease-out infinite}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
+.leaflet-container{background:#d9d3c4}
 </style></head>
 <body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,10 +20,12 @@ body{background:#d9d3c4}
 if (typeof L === 'undefined') {
   document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#555">The map could not load. Check your internet connection and reopen this tab.</div>';
 } else {
+  // Swapped to ArcGIS tiles (No API key needed)
   var TILE_URLS = {
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    light: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
   };
+  
   var map = L.map('map', { zoomControl: false }).setView([25.4610, 68.7183], 13);
   map.attributionControl.setPrefix(false);
   L.control.zoom({ position: 'topright' }).addTo(map);
@@ -35,8 +38,8 @@ if (typeof L === 'undefined') {
     currentTheme = key;
     if (tileLayer) map.removeLayer(tileLayer);
     tileLayer = L.tileLayer(TILE_URLS[key], {
-      subdomains: 'abcd', maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      maxZoom: 19,
+      attribution: '&copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, IPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
     }).addTo(map);
   }
 
@@ -69,7 +72,6 @@ if (typeof L === 'undefined') {
     var p = pathPts[i];
     if (!p) return;
     if (!playMarker) {
-      // SVG bus icon inside the pin -- no emoji, renders identically on every device
       playMarker = L.marker(p, {
         icon: L.divIcon({ className: '', html: '<div class="play-pin"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 18v2"/><path d="M18 18v2"/><path d="M6 10h12"/></svg></div>', iconSize: [30, 30], iconAnchor: [15, 15] }),
         zIndexOffset: 1000
@@ -91,7 +93,6 @@ export default function HistoryMap({ path, playIndex, isDark, follow = true }) {
     [path, isDark]
   );
 
-  // The path is sent only when it changes; the moving marker is a tiny separate message
   useEffect(() => {
     if (loadCount === 0 || !webRef.current) return;
     webRef.current.injectJavaScript(`window.__setPath && window.__setPath(JSON.parse(${JSON.stringify(pathPayload)})); true;`);

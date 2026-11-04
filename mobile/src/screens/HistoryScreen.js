@@ -215,6 +215,7 @@ export default function HistoryScreen() {
       <View style={[card, { padding: 0, height: 300, overflow: 'hidden' }]}>
         {pings.length > 0 ? (
           <>
+           
             <HistoryMap path={pings} playIndex={pb.index} isDark={isDark} />
             <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(23,59,50,0.88)', borderRadius: 9, paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ color: '#FFFFFF', fontSize: 11.5, fontWeight: '600' }}>Route playback — Point {pb.index + 1}</Text>

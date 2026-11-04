@@ -18,7 +18,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#173B32"
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,19 +42,19 @@
         {
           "locationWhenInUsePermission": "My Campus Ride uses your location to show how far each bus is from you."
         }
-      ],
-      "expo-font"
+      ]
     ],
     "updates": {
-      "url": "https://u.expo.dev/your-project-id-here"
+      "url": "https://u.expo.dev/d175eac5-90b0-4e8d-811c-d2602f5996d9"
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "extra": {
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "d175eac5-90b0-4e8d-811c-d2602f5996d9"
       }
-    }
+    },
+    "owner": "hasnainjaffer"
   }
 }

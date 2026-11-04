@@ -9,8 +9,9 @@ import { useLiveBuses } from '../context/LiveBusesContext';
 import { useUserLocation } from '../context/LocationContext';
 import { useNotifications } from '../context/NotificationsContext';
 import { haversineMeters, formatDistance, estimateEtaMinutes, formatEta, timeAgo } from '../utils/geo';
-import { notificationMeta } from '../utils/notificationMeta';
+import { notificationMeta, NotificationIcon } from '../utils/notificationMeta';
 import { goToScreen, openLiveMap } from '../navigation/navigationRef';
+import { IconBus } from '../components/Icons';
 
 function Stat({ icon, label, value, color, colors }) {
   return (
@@ -181,8 +182,13 @@ export default function HomeScreen() {
               style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}
             >
               <View style={{ flexShrink: 1, paddingRight: 8 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>🚌 {b.name}</Text>
-                {!!b.routeName && <Text style={{ fontSize: 12, color: colors.textMuted }} numberOfLines={1}>{b.routeName}</Text>}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: colors.accentBg, alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
+                    <IconBus size={14} color={colors.accent} />
+                  </View>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>{b.name}</Text>
+                </View>                
+                {!!b.routeName && <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2, marginLeft: 36 }} numberOfLines={1}>{b.routeName}</Text>}
               </View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accent }}>{formatDistance(b.distanceM)}</Text>
             </TouchableOpacity>
@@ -228,7 +234,9 @@ export default function HomeScreen() {
             const meta = notificationMeta(n.type, colors);
             return (
               <View key={n._id} style={{ flexDirection: 'row', paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.border }}>
-                <Text style={{ fontSize: 18, marginRight: 10 }}>{meta.icon}</Text>
+                <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: meta.bgColor || colors.bgPage, alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                  <NotificationIcon type={n.type} size={18} color={meta.color} />
+                </View>                
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13.5, fontWeight: '600', color: colors.textPrimary }}>{n.title}</Text>
                   <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>{timeAgo(new Date(n.createdAt).getTime())}</Text>

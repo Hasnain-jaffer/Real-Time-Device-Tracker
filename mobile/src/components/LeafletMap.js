@@ -1,6 +1,8 @@
 // mobile/src/components/LeafletMap.js
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useTheme } from '../context/ThemeContext';
 
 const HTML = `<!DOCTYPE html>
 <html><head>
@@ -9,22 +11,28 @@ const HTML = `<!DOCTYPE html>
 <style>
 html,body,#map{height:100%;width:100%;margin:0;padding:0}
 body{background:#d9d3c4}
-.bus-pin{width:34px;height:34px;border-radius:50%;background:#5E8C61;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:17px;position:relative}
-.bus-pin.selected{width:42px;height:42px;font-size:21px;background:#173B32}
+.bus-pin{width:34px;height:34px;border-radius:50%;background:#5E8C61;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;position:relative}
+.bus-pin svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bus-pin.selected{width:42px;height:42px;background:#173B32}
+.bus-pin.selected svg{width:22px;height:22px}
 .bus-pin.selected::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:2px solid #5E8C61;animation:pulse 1.6s ease-out infinite}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
+.leaflet-container{background:#d9d3c4}
 </style></head>
 <body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 if (typeof L === 'undefined') {
-  document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#555">The map could not load. Check your internet connection and reopen this tab.</div>';
+  document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#555">Map failed to load. Check internet connection.</div>';
 } else {
+  // Same tiles as web version - NO API KEY NEEDED
   var TILE_URLS = {
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    light: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
   };
+  
   var map = L.map('map', { zoomControl: false }).setView([25.4610, 68.7183], 13);
   map.attributionControl.setPrefix(false);
   L.control.zoom({ position: 'topright' }).addTo(map);
@@ -33,38 +41,46 @@ if (typeof L === 'undefined') {
   var busMarkers = {}, userMarker = null;
   var didFit = false, lastNonce = -1;
 
+  var BUS_SVG = '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 18v2"/><path d="M18 18v2"/><path d="M6 10h12"/></svg>';
+
   function post(msg) {
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(msg));
   }
-  function setTheme(isDark) {
-    var key = isDark ? 'dark' : 'light';
-    if (currentTheme === key) return;
-    currentTheme = key;
+  
+  function setTheme(theme) {
+    // theme: 'light', 'dark', or 'satellite'
+    if (currentTheme === theme) return;
+    currentTheme = theme;
     if (tileLayer) map.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(TILE_URLS[key], {
-      subdomains: 'abcd', maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    
+    var url = TILE_URLS[theme] || TILE_URLS.light;
+    tileLayer = L.tileLayer(url, {
+      maxZoom: 19,
+      attribution: '&copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, IPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
     }).addTo(map);
   }
+  
   function busIcon(selected) {
     var size = selected ? 42 : 34;
     return L.divIcon({
       className: '',
-      html: '<div class="bus-pin' + (selected ? ' selected' : '') + '">\\uD83D\\uDE8C</div>',
+      html: '<div class="bus-pin' + (selected ? ' selected' : '') + '">' + BUS_SVG + '</div>',
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2]
     });
   }
+  
   function nameLabel(name) {
     var el = document.createElement('span');
-    el.textContent = name; // textContent, never innerHTML: names are data, not markup
+    el.textContent = name;
     return el;
   }
 
   window.addEventListener('resize', function () { map.invalidateSize(); });
 
   window.__setState = function (state) {
-    setTheme(state.isDark);
+    // state.theme: 'light', 'dark', or 'satellite'
+    setTheme(state.theme || 'light');
 
     var seen = {};
     state.buses.forEach(function (b) {
@@ -92,6 +108,7 @@ if (typeof L === 'undefined') {
         }
       }
     });
+    
     Object.keys(busMarkers).forEach(function (id) {
       if (!seen[id]) { map.removeLayer(busMarkers[id]); delete busMarkers[id]; }
     });
@@ -131,8 +148,17 @@ if (typeof L === 'undefined') {
 </script></body></html>`;
 
 export default function LeafletMap({ buses, user, selectedId, isDark, focus, onSelect }) {
+  const { colors } = useTheme();
   const webRef = useRef(null);
   const [loadCount, setLoadCount] = useState(0);
+  const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
+
+  // Determine theme for map
+  const getTheme = () => {
+    if (mapLayer === 'satellite') return 'satellite';
+    if (mapLayer === 'dark') return 'dark';
+    return isDark ? 'dark' : 'light';
+  };
 
   const payload = useMemo(
     () =>
@@ -140,13 +166,13 @@ export default function LeafletMap({ buses, user, selectedId, isDark, focus, onS
         buses: buses.map((b) => ({ id: b.id, lat: b.latitude, lng: b.longitude, name: b.name })),
         user: user ? { lat: user.latitude, lng: user.longitude } : null,
         selectedId,
-        isDark,
+        theme: getTheme(),
         focus,
       }),
-    [buses, user, selectedId, isDark, focus]
+    [buses, user, selectedId, isDark, mapLayer, focus]
   );
 
-  // Push the latest state into the page. loadCount re-pushes after any page reload.
+  // Push state into WebView
   useEffect(() => {
     if (loadCount === 0 || !webRef.current) return;
     webRef.current.injectJavaScript(
@@ -164,20 +190,76 @@ export default function LeafletMap({ buses, user, selectedId, isDark, focus, onS
   }
 
   return (
-    <WebView
-      ref={webRef}
-      source={{ html: HTML }}
-      originWhitelist={['*']}
-      javaScriptEnabled
-      domStorageEnabled
-      onLoad={() => setLoadCount((c) => c + 1)}
-      onMessage={handleMessage}
-      scrollEnabled={false}
-      bounces={false}
-      overScrollMode="never"
-      showsVerticalScrollIndicator={false}
-      showsHorizontalScrollIndicator={false}
-      style={{ flex: 1 }}
-    />
+    <View style={styles.container}>
+      <WebView
+        ref={webRef}
+        source={{ html: HTML }}
+        originWhitelist={['*']}
+        javaScriptEnabled
+        domStorageEnabled
+        onLoad={() => setLoadCount((c) => c + 1)}
+        onMessage={handleMessage}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        style={{ flex: 1 }}
+      />
+
+      {/* Layer Switcher - Same as web */}
+      <View style={[styles.layerSwitcher, { backgroundColor: colors.bgSurface, borderColor: colors.border }]}>
+        {[
+          { key: 'normal', label: 'Map' },
+          { key: 'satellite', label: 'Sat' },
+          { key: 'dark', label: 'Dark' },
+        ].map((layer) => (
+          <TouchableOpacity
+            key={layer.key}
+            onPress={() => setMapLayer(layer.key)}
+            style={[
+              styles.layerButton,
+              mapLayer === layer.key && { backgroundColor: colors.accent },
+            ]}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '600',
+                color: mapLayer === layer.key ? '#fff' : colors.textPrimary,
+              }}
+            >
+              {layer.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  layerSwitcher: {
+    position: 'absolute',
+    bottom: 20,
+    left: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 4,
+    flexDirection: 'column',
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  layerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+});

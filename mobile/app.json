@@ -17,13 +17,11 @@
       "bundleIdentifier": "com.mycampusride.app"
     },
     "android": {
+      "package": "com.mycampusride.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "package": "com.mycampusride.app"
+        "backgroundColor": "#173B32"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,6 +34,11 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
     }
   }
 }

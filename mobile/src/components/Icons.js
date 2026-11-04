@@ -235,6 +235,40 @@ export const IconChevronLeft = ({ size = 24, color = '#000', style }) => (
   </Svg>
 );
 
+export const IconPlay = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Polygon points="7 4 21 12 7 20 7 4" fill={color} stroke="none" />
+  </Svg>
+);
+
+export const IconPause = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Rect x="6" y="4" width="4" height="16" fill={color} stroke="none" />
+    <Rect x="14" y="4" width="4" height="16" fill={color} stroke="none" />
+  </Svg>
+);
+
+export const IconSkipBack = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Polygon points="19 20 9 12 19 4 19 20" fill={color} stroke="none" />
+    <Line x1="5" y1="19" x2="5" y2="5" />
+  </Svg>
+);
+
+export const IconEye = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <Circle cx="12" cy="12" r="3" />
+  </Svg>
+);
+
+export const IconEyeOff = ({ size = 24, color = '#000', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <Path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <Line x1="1" y1="1" x2="23" y2="23" />
+  </Svg>
+);
+
 // Notification type icons
 export const NotificationIcon = ({ type, size = 22, color = '#000', style }) => {
   const icons = {

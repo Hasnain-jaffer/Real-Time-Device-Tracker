@@ -8,22 +8,23 @@ import { navigationRef } from './navigationRef';
 import AppHeader from '../components/AppHeader';
 import { IconHome, IconBus, IconMap, IconClock } from '../components/Icons';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HomeScreen from '../screens/HomeScreen';
 import BusesScreen from '../screens/BusesScreen';
 import LiveMapScreen from '../screens/LiveMapScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import RoutesScreen from '../screens/RoutesScreen';
 import RouteDetailScreen from '../screens/RouteDetailScreen';
 import BusDetailScreen from '../screens/BusDetailScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const TAB_ICONS = { Home: IconHome, Buses: IconBus, 'Live Map': IconMap, History: IconClock };
-const HistoryPlaceholder = () => <PlaceholderScreen title="History" />;
 
 function Tabs() {
   const { colors } = useTheme();
@@ -43,7 +44,7 @@ function Tabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Buses" component={BusesScreen} />
       <Tab.Screen name="Live Map" component={LiveMapScreen} />
-      <Tab.Screen name="History" component={HistoryPlaceholder} />
+      <Tab.Screen name="History" component={HistoryScreen} />
     </Tab.Navigator>
   );
 }
@@ -108,6 +109,8 @@ export default function RootNavigator() {
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

@@ -1,13 +1,13 @@
-// mobile/src/screens/LoginScreen.js
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, TouchableOpacity, ActivityIndicator, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AuthLayout from '../components/AuthLayout';
+import AuthField from '../components/AuthField';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { IconBus } from '../components/Icons';
-import LogoMark from '../components/LogoMark';
 
 export default function LoginScreen() {
+  const navigation = useNavigation();
   const { login } = useAuth();
   const { colors } = useTheme();
   const [email, setEmail] = useState('');
@@ -35,58 +35,45 @@ export default function LoginScreen() {
     }
   }
 
-  const input = {
-    backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.textPrimary, marginBottom: 12,
-  };
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPage }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
-        <View style={{ alignItems: 'center', marginBottom: 28 }}>
-          <View style={{ marginBottom: 12 }}>
-            <LogoMark size={52} />
-          </View>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: colors.textPrimary }}>RoutePulse</Text>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>Track your campus bus in real time</Text>
-        </View>
+    <AuthLayout title="RoutePulse" subtitle="Track your campus bus in real time">
+      <AuthField
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="email-address"
+        placeholder="you@example.com"
+      />
+      <AuthField label="Password" value={password} onChangeText={setPassword} secure placeholder="Your password" onSubmitEditing={handleLogin} />
 
-        <TextInput
-          style={input}
-          placeholder="Email"
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={input}
-          placeholder="Password"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          onSubmitEditing={handleLogin}
-        />
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginBottom: 14 }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>Forgot password?</Text>
+      </TouchableOpacity>
 
-        {!!error && <Text style={{ color: colors.critical, fontSize: 13, marginBottom: 10 }}>{error}</Text>}
+      {!!error && <Text style={{ color: colors.critical, fontSize: 13, marginBottom: 10 }}>{error}</Text>}
 
-        <TouchableOpacity
-          onPress={handleLogin}
-          disabled={busy}
-          style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: busy ? 0.7 : 1 }}
-        >
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Sign in</Text>}
+      <TouchableOpacity
+        onPress={handleLogin}
+        disabled={busy}
+        style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: busy ? 0.7 : 1 }}
+      >
+        {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Sign in</Text>}
+      </TouchableOpacity>
+
+      {busy && (
+        <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: 12 }}>
+          This can take up to a minute if the server was asleep.
+        </Text>
+      )}
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 22 }}>
+        <Text style={{ fontSize: 13.5, color: colors.textSecondary }}>New here? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <Text style={{ fontSize: 13.5, fontWeight: '700', color: colors.accent }}>Create an account</Text>
         </TouchableOpacity>
-
-        {busy && (
-          <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: 12 }}>
-            This can take up to a minute if the server was asleep.
-          </Text>
-        )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+    </AuthLayout>
   );
 }

@@ -1,3 +1,4 @@
+// mobile/src/components/HistoryMap.js
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { WebView } from 'react-native-webview';
 
@@ -13,6 +14,23 @@ body{background:#d9d3c4}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
 .leaflet-container{background:#d9d3c4}
+
+/* FIX: Style attribution properly */
+.leaflet-control-attribution {
+  background: rgba(255,255,255,0.85) !important;
+  color: #888 !important;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px 0 0 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.leaflet-control-attribution a {
+  color: #5E8C61 !important;
+  text-decoration: none !important;
+}
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
 </style></head>
 <body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -20,7 +38,6 @@ body{background:#d9d3c4}
 if (typeof L === 'undefined') {
   document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#555">The map could not load. Check your internet connection and reopen this tab.</div>';
 } else {
-  // Swapped to ArcGIS tiles (No API key needed)
   var TILE_URLS = {
     light: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
@@ -39,7 +56,7 @@ if (typeof L === 'undefined') {
     if (tileLayer) map.removeLayer(tileLayer);
     tileLayer = L.tileLayer(TILE_URLS[key], {
       maxZoom: 19,
-      attribution: '&copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, IPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+      attribution: '&copy; Esri'
     }).addTo(map);
   }
 

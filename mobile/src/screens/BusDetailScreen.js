@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, InteractionManager } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiClient from '../lib/apiClient';
 import { useTheme } from '../context/ThemeContext';
@@ -69,16 +69,20 @@ export default function BusDetailScreen({ route }) {
   }, [busId]);
 
   useFocusEffect(
-    useCallback(() => {
-      load();
-      const poll = setInterval(load, 30000);
-      const tick = setInterval(() => setNow(Date.now()), 5000);
-      return () => {
-        clearInterval(poll);
-        clearInterval(tick);
-      };
-    }, [load])
-  );
+  useCallback(() => {
+    let cancelled = false;
+    InteractionManager.runAfterInteractions(() => {
+      if (!cancelled) load();
+    });
+    const poll = setInterval(load, 30000);
+    const tick = setInterval(() => setNow(Date.now()), 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      clearInterval(tick);
+    };
+  }, [load])
+);
 
   async function onRefresh() {
     setRefreshing(true);

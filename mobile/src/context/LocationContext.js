@@ -9,16 +9,18 @@ const LocationContext = createContext(null);
 export function LocationProvider({ children }) {
   const { user } = useAuth();
   const userId = user?.id;
-  // 'undetermined' | 'granted' | 'denied' | 'services-off' | 'error'
   const [status, setStatus] = useState('undetermined');
   const [position, setPosition] = useState(null);
   const subRef = useRef(null);
   const runRef = useRef(0);
+  const appStateRef = useRef(AppState.currentState);
 
   const stop = useCallback(() => {
-    runRef.current += 1; // invalidates any start() still in flight
-    subRef.current?.remove();
-    subRef.current = null;
+    runRef.current += 1;
+    if (subRef.current) {
+      subRef.current.remove();
+      subRef.current = null;
+    }
   }, []);
 
   const start = useCallback(async () => {
@@ -69,15 +71,34 @@ export function LocationProvider({ children }) {
     return stop;
   }, [userId, start, stop]);
 
-  // The student may switch location on in system settings and come back
+  // FIX: Stop location when app goes to background, restart when active
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && userId && status !== 'granted') start();
-    });
-    return () => sub.remove();
-  }, [status, userId, start]);
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      const prevState = appStateRef.current;
+      appStateRef.current = nextAppState;
 
-  return <LocationContext.Provider value={{ position, status, retry: start }}>{children}</LocationContext.Provider>;
+      if (nextAppState === 'active' && userId) {
+        // App came to foreground
+        if (status !== 'granted') {
+          start();
+        }
+      } else if (
+        (prevState === 'active' && nextAppState.match(/inactive|background/)) ||
+        nextAppState === 'background'
+      ) {
+        // App went to background — stop location to save battery and allow exit
+        stop();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [status, userId, start, stop]);
+
+  return (
+    <LocationContext.Provider value={{ position, status, retry: start }}>
+      {children}
+    </LocationContext.Provider>
+  );
 }
 
 export const useUserLocation = () => useContext(LocationContext);

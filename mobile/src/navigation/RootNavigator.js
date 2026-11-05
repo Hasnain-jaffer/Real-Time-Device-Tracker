@@ -1,3 +1,4 @@
+// mobile/src/navigation/RootNavigator.js
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -40,6 +41,10 @@ function Tabs() {
           return TabIcon ? <TabIcon size={size} color={color} /> : null;
         },
       })}
+      // FIX: Keep all tabs mounted AND attached — no detach = no white repaint flash
+      lazy={false}
+      unmountOnBlur={false}
+      detachInactiveScreens={false}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Buses" component={BusesScreen} />
@@ -56,6 +61,10 @@ function AppStack() {
       screenOptions={{
         header: (props) => <AppHeader {...props} />,
         contentStyle: { backgroundColor: colors.bgPage },
+        freezeOnBlur: false,
+        // FIX: Don't detach the screen underneath when a new one is pushed.
+        // On back, the previous screen is already painted = zero white flash.
+        detachPreviousScreen: false,
       }}
     >
       <Stack.Screen name="MainTabs" component={Tabs} />

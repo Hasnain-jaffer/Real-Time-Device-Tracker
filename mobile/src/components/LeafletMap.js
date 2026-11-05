@@ -19,6 +19,23 @@ body{background:#d9d3c4}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
 .leaflet-container{background:#d9d3c4}
+
+/* FIX: Style attribution properly */
+.leaflet-control-attribution {
+  background: rgba(255,255,255,0.85) !important;
+  color: #888 !important;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px 0 0 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.leaflet-control-attribution a {
+  color: #5E8C61 !important;
+  text-decoration: none !important;
+}
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
 </style></head>
 <body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -26,7 +43,6 @@ body{background:#d9d3c4}
 if (typeof L === 'undefined') {
   document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#555">Map failed to load. Check internet connection.</div>';
 } else {
-  // Same tiles as web version - NO API KEY NEEDED
   var TILE_URLS = {
     light: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -48,7 +64,6 @@ if (typeof L === 'undefined') {
   }
   
   function setTheme(theme) {
-    // theme: 'light', 'dark', or 'satellite'
     if (currentTheme === theme) return;
     currentTheme = theme;
     if (tileLayer) map.removeLayer(tileLayer);
@@ -56,7 +71,7 @@ if (typeof L === 'undefined') {
     var url = TILE_URLS[theme] || TILE_URLS.light;
     tileLayer = L.tileLayer(url, {
       maxZoom: 19,
-      attribution: '&copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, IPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+      attribution: '&copy; Esri'
     }).addTo(map);
   }
   
@@ -79,7 +94,6 @@ if (typeof L === 'undefined') {
   window.addEventListener('resize', function () { map.invalidateSize(); });
 
   window.__setState = function (state) {
-    // state.theme: 'light', 'dark', or 'satellite'
     setTheme(state.theme || 'light');
 
     var seen = {};
@@ -151,9 +165,8 @@ export default function LeafletMap({ buses, user, selectedId, isDark, focus, onS
   const { colors } = useTheme();
   const webRef = useRef(null);
   const [loadCount, setLoadCount] = useState(0);
-  const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
+  const [mapLayer, setMapLayer] = useState('normal');
 
-  // Determine theme for map
   const getTheme = () => {
     if (mapLayer === 'satellite') return 'satellite';
     if (mapLayer === 'dark') return 'dark';
@@ -172,7 +185,6 @@ export default function LeafletMap({ buses, user, selectedId, isDark, focus, onS
     [buses, user, selectedId, isDark, mapLayer, focus]
   );
 
-  // Push state into WebView
   useEffect(() => {
     if (loadCount === 0 || !webRef.current) return;
     webRef.current.injectJavaScript(
@@ -207,7 +219,6 @@ export default function LeafletMap({ buses, user, selectedId, isDark, focus, onS
         style={{ flex: 1 }}
       />
 
-      {/* Layer Switcher - Same as web */}
       <View style={[styles.layerSwitcher, { backgroundColor: colors.bgSurface, borderColor: colors.border }]}>
         {[
           { key: 'normal', label: 'Map' },

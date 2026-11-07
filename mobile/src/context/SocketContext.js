@@ -1,6 +1,7 @@
 // mobile/src/context/SocketContext.js
-import { createContext, useContext, useEffect, useState } from 'react';
-import { getSocket } from '../lib/socketClient';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
+import { io } from 'socket.io-client';
 import { getAccessToken, onAccessTokenChange } from '../lib/tokenStore';
 import { useAuth } from './AuthContext';
 
@@ -10,39 +11,111 @@ export function SocketProvider({ children }) {
   const { user } = useAuth();
   const userId = user?.id;
   const [isConnected, setIsConnected] = useState(false);
+  const socketRef = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
 
-  useEffect(() => {
-    if (!userId) return undefined;
-    const socket = getSocket();
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.removeAllListeners();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      setIsConnected(false);
+    }
+  }, []);
 
-    const onConnect = () => {
-      setIsConnected(true);
-      const token = getAccessToken();
-      if (token) socket.emit('identify', { token });
-    };
-    const onDisconnect = () => setIsConnected(false);
+  const connect = useCallback(() => {
+    if (!userId) return;
+    
+    // Don't reconnect if already connected
+    if (socketRef.current?.connected) return;
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    // Re-identify when the access token is refreshed, same as the web app
-    const unsubscribe = onAccessTokenChange((token) => {
-      if (token && socket.connected) socket.emit('identify', { token });
+    disconnect(); // Clean any existing socket
+
+    const API_URL = process.env.EXPO_PUBLIC_API_URL;
+    if (!API_URL) {
+      console.error('[Socket] EXPO_PUBLIC_API_URL is not defined');
+      return;
+    }
+
+    const token = getAccessToken();
+    const socket = io(API_URL, {
+      auth: { token },
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000,
     });
 
-    socket.connect();
+    socket.on('connect', () => {
+      console.log('[Socket] Connected');
+      setIsConnected(true);
+      const currentToken = getAccessToken();
+      if (currentToken) socket.emit('identify', { token: currentToken });
+    });
 
-    return () => {
-      unsubscribe();
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.disconnect();
+    socket.on('disconnect', (reason) => {
+      console.log('[Socket] Disconnected:', reason);
       setIsConnected(false);
-    };
-  }, [userId]);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.log('[Socket] Connection error:', error.message);
+      setIsConnected(false);
+    });
+
+    socketRef.current = socket;
+  }, [userId, disconnect]);
+
+  // Connect when user logs in, disconnect on logout
+  useEffect(() => {
+    if (userId) {
+      connect();
+    } else {
+      disconnect();
+    }
+    return disconnect; // Cleanup on unmount
+  }, [userId, connect, disconnect]);
+
+  // CRITICAL FIX: Handle app going to background/foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      const prevState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // App going to background — disconnect socket to allow clean exit
+        console.log('[Socket] App backgrounded, disconnecting');
+        disconnect();
+      } else if (nextAppState === 'active' && userId) {
+        // App coming to foreground — reconnect
+        console.log('[Socket] App active, reconnecting');
+        connect();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [userId, connect, disconnect]);
+
+  // Re-identify when token refreshes
+  useEffect(() => {
+    const unsubscribe = onAccessTokenChange((token) => {
+      if (token && socketRef.current?.connected) {
+        socketRef.current.emit('identify', { token });
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   return (
-    <SocketContext.Provider value={{ socket: getSocket(), isConnected }}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={{ socket: socketRef.current, isConnected, reconnect: connect }}>
+      {children}
+    </SocketContext.Provider>
   );
 }
 
-export const useSocket = () => useContext(SocketContext);
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (!context) throw new Error('useSocket must be used within SocketProvider');
+  return context;
+};

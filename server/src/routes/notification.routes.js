@@ -5,11 +5,11 @@ import {
   markAsRead,
   markAllAsRead,
 } from '../controllers/notification.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, requireAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(authenticate, requireAuth);
 
 router.get('/', listNotifications);
 router.patch('/:id/read', markAsRead);

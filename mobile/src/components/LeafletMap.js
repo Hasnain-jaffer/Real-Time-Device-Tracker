@@ -62,8 +62,9 @@ if (typeof L === 'undefined') {
     
     var url = TILE_URLS[theme] || TILE_URLS.light;
     tileLayer = L.tileLayer(url, {
-      maxZoom: 19,
-      attribution: '&copy; Esri'
+    maxNativeZoom: 17,
+    maxZoom: 19,
+    attribution: '&copy; Esri'
     }).addTo(map);
   }
   

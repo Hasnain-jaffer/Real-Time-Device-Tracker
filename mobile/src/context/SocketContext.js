@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AppState } from 'react-native';
 import { io } from 'socket.io-client';
+import { API_ORIGIN } from '../config';
 import { getAccessToken, onAccessTokenChange } from '../lib/tokenStore';
 import { useAuth } from './AuthContext';
 
@@ -25,21 +26,15 @@ export function SocketProvider({ children }) {
 
   const connect = useCallback(() => {
     if (!userId) return;
-    
+
     // Don't reconnect if already connected
     if (socketRef.current?.connected) return;
 
     disconnect(); // Clean any existing socket
 
-    const API_URL = process.env.EXPO_PUBLIC_API_URL;
-    if (!API_URL) {
-      console.error('[Socket] EXPO_PUBLIC_API_URL is not defined');
-      return;
-    }
-
-    const token = getAccessToken();
-    const socket = io(API_URL, {
-      auth: { token },
+    const token = getAccessToken(); // null for guests
+    const socket = io(API_ORIGIN, {
+      auth: token ? { token } : {},
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -67,28 +62,25 @@ export function SocketProvider({ children }) {
     socketRef.current = socket;
   }, [userId, disconnect]);
 
-  // Connect when user logs in, disconnect on logout
+  // Connect when the user changes (guest or signed in), disconnect on unmount
   useEffect(() => {
     if (userId) {
       connect();
     } else {
       disconnect();
     }
-    return disconnect; // Cleanup on unmount
+    return disconnect;
   }, [userId, connect, disconnect]);
 
-  // CRITICAL FIX: Handle app going to background/foreground
+  // Handle app going to background/foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
-      const prevState = appStateRef.current;
       appStateRef.current = nextAppState;
 
       if (nextAppState === 'background' || nextAppState === 'inactive') {
-        // App going to background — disconnect socket to allow clean exit
         console.log('[Socket] App backgrounded, disconnecting');
         disconnect();
       } else if (nextAppState === 'active' && userId) {
-        // App coming to foreground — reconnect
         console.log('[Socket] App active, reconnecting');
         connect();
       }
@@ -97,7 +89,7 @@ export function SocketProvider({ children }) {
     return () => subscription.remove();
   }, [userId, connect, disconnect]);
 
-  // Re-identify when token refreshes
+  // Re-identify when the token refreshes
   useEffect(() => {
     const unsubscribe = onAccessTokenChange((token) => {
       if (token && socketRef.current?.connected) {

@@ -73,6 +73,7 @@ export default function LiveMapScreen({ route, navigation }) {
         isDark={isDark}
         focus={focus}
         onSelect={selectBus}
+        topOffset={42}  // pushes below the status chip
       />
 
       {/* Status Chip */}

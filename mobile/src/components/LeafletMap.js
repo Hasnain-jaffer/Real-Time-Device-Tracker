@@ -19,23 +19,15 @@ body{background:#d9d3c4}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
 .leaflet-container{background:#d9d3c4}
-
-/* FIX: Style attribution properly */
 .leaflet-control-attribution {
-  background: rgba(255,255,255,0.85) !important;
-  color: #888 !important;
-  font-size: 9px !important;
-  padding: 2px 6px !important;
-  border-radius: 4px 0 0 0 !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  background: rgba(255,255,255,0.7) !important;
+  color: #999 !important;
+  font-size: 8px !important;
+  padding: 1px 4px !important;
+  white-space: nowrap !important;
+  border-radius: 3px 0 0 0 !important;
 }
-.leaflet-control-attribution a {
-  color: #5E8C61 !important;
-  text-decoration: none !important;
-}
-.leaflet-control-attribution a:hover {
-  text-decoration: underline !important;
-}
+.leaflet-control-attribution a { color: #5E8C61 !important; text-decoration: none !important; }
 </style></head>
 <body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -161,7 +153,7 @@ if (typeof L === 'undefined') {
 }
 </script></body></html>`;
 
-export default function LeafletMap({ buses, user, selectedId, isDark, focus, onSelect }) {
+export default function LeafletMap({ buses, user, selectedId, isDark, focus, onSelect, topOffset = 0 }) {
   const { colors } = useTheme();
   const webRef = useRef(null);
   const [loadCount, setLoadCount] = useState(0);
@@ -219,7 +211,17 @@ export default function LeafletMap({ buses, user, selectedId, isDark, focus, onS
         style={{ flex: 1 }}
       />
 
-      <View style={[styles.layerSwitcher, { backgroundColor: colors.bgSurface, borderColor: colors.border }]}>
+      {/* Layer Switcher — topOffset applied inline, NOT in StyleSheet */}
+      <View
+        style={[
+          styles.layerSwitcher,
+          {
+            backgroundColor: colors.bgSurface,
+            borderColor: colors.border,
+            top: 12 + topOffset,  // dynamic offset from prop
+          },
+        ]}
+      >
         {[
           { key: 'normal', label: 'Map' },
           { key: 'satellite', label: 'Sat' },
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
   },
   layerSwitcher: {
     position: 'absolute',
-    bottom: 20,
+    top: 12,        // base value, overridden inline when topOffset is passed
     left: 12,
     borderRadius: 12,
     borderWidth: 1,

@@ -1,6 +1,8 @@
 // mobile/src/components/HistoryMap.js
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useTheme } from '../context/ThemeContext';
 
 const HTML = `<!DOCTYPE html>
 <html><head>
@@ -14,23 +16,15 @@ body{background:#d9d3c4}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
 .leaflet-container{background:#d9d3c4}
-
-/* FIX: Style attribution properly */
 .leaflet-control-attribution {
-  background: rgba(255,255,255,0.85) !important;
-  color: #888 !important;
-  font-size: 9px !important;
-  padding: 2px 6px !important;
-  border-radius: 4px 0 0 0 !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  background: rgba(255,255,255,0.7) !important;
+  color: #999 !important;
+  font-size: 8px !important;
+  padding: 1px 4px !important;
+  white-space: nowrap !important;
+  border-radius: 3px 0 0 0 !important;
 }
-.leaflet-control-attribution a {
-  color: #5E8C61 !important;
-  text-decoration: none !important;
-}
-.leaflet-control-attribution a:hover {
-  text-decoration: underline !important;
-}
+.leaflet-control-attribution a { color: #5E8C61 !important; text-decoration: none !important; }
 </style></head>
 <body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -40,7 +34,8 @@ if (typeof L === 'undefined') {
 } else {
   var TILE_URLS = {
     light: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+    dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
   };
   
   var map = L.map('map', { zoomControl: false }).setView([25.4610, 68.7183], 13);
@@ -49,12 +44,12 @@ if (typeof L === 'undefined') {
 
   var tileLayer = null, currentTheme = null, pathLayer = null, pathSig = '', pathPts = [], playMarker = null;
 
-  function setTheme(isDark) {
-    var key = isDark ? 'dark' : 'light';
-    if (currentTheme === key) return;
-    currentTheme = key;
+  function setTheme(theme) {
+    if (currentTheme === theme) return;
+    currentTheme = theme;
     if (tileLayer) map.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(TILE_URLS[key], {
+    var url = TILE_URLS[theme] || TILE_URLS.light;
+    tileLayer = L.tileLayer(url, {
       maxZoom: 19,
       attribution: '&copy; Esri'
     }).addTo(map);
@@ -63,7 +58,7 @@ if (typeof L === 'undefined') {
   window.addEventListener('resize', function () { map.invalidateSize(); });
 
   window.__setPath = function (state) {
-    setTheme(state.isDark);
+    setTheme(state.theme || 'light');
     var pts = state.path;
     var sig = pts.length + ':' + (pts[0] || []).join(',') + ':' + (pts[pts.length - 1] || []).join(',');
     if (sig === pathSig) return;
@@ -101,13 +96,24 @@ if (typeof L === 'undefined') {
 }
 </script></body></html>`;
 
-export default function HistoryMap({ path, playIndex, isDark, follow = true }) {
+export default function HistoryMap({ path, playIndex, isDark, follow = true, topOffset = 0 }) {
+  const { colors } = useTheme();
   const webRef = useRef(null);
   const [loadCount, setLoadCount] = useState(0);
+  const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
+
+  const getTheme = () => {
+    if (mapLayer === 'satellite') return 'satellite';
+    if (mapLayer === 'dark') return 'dark';
+    return isDark ? 'dark' : 'light';
+  };
 
   const pathPayload = useMemo(
-    () => JSON.stringify({ path: path.map((p) => [p.latitude, p.longitude]), isDark }),
-    [path, isDark]
+    () => JSON.stringify({ 
+      path: path.map((p) => [p.latitude, p.longitude]), 
+      theme: getTheme() 
+    }),
+    [path, isDark, mapLayer]
   );
 
   useEffect(() => {
@@ -121,19 +127,72 @@ export default function HistoryMap({ path, playIndex, isDark, follow = true }) {
   }, [loadCount, playIndex, follow, pathPayload]);
 
   return (
-    <WebView
-      ref={webRef}
-      source={{ html: HTML }}
-      originWhitelist={['*']}
-      javaScriptEnabled
-      domStorageEnabled
-      onLoad={() => setLoadCount((c) => c + 1)}
-      scrollEnabled={false}
-      bounces={false}
-      overScrollMode="never"
-      showsVerticalScrollIndicator={false}
-      showsHorizontalScrollIndicator={false}
-      style={{ flex: 1 }}
-    />
+    <View style={{ flex: 1 }}>
+      <WebView
+        ref={webRef}
+        source={{ html: HTML }}
+        originWhitelist={['*']}
+        javaScriptEnabled
+        domStorageEnabled
+        onLoad={() => setLoadCount((c) => c + 1)}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        style={{ flex: 1 }}
+      />
+
+      {/* Layer Switcher — same position as LeafletMap */}
+      <View style={[styles.layerSwitcher, { backgroundColor: colors.bgSurface, borderColor: colors.border, top: 12 + topOffset, }]}>
+        {[
+          { key: 'normal', label: 'Map' },
+          { key: 'satellite', label: 'Sat' },
+          { key: 'dark', label: 'Dark' },
+        ].map((layer) => (
+          <TouchableOpacity
+            key={layer.key}
+            onPress={() => setMapLayer(layer.key)}
+            style={[
+              styles.layerButton,
+              mapLayer === layer.key && { backgroundColor: colors.accent },
+            ]}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '600',
+                color: mapLayer === layer.key ? '#fff' : colors.textPrimary,
+              }}
+            >
+              {layer.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  layerSwitcher: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 4,
+    flexDirection: 'column',
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  layerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+});

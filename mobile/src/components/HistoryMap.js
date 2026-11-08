@@ -32,11 +32,28 @@ body{background:#d9d3c4}
 if (typeof L === 'undefined') {
   document.getElementById('map').innerHTML = '<div style="padding:24px;font:14px sans-serif;color:#555">The map could not load. Check your internet connection and reopen this tab.</div>';
 } else {
-  var TILE_URLS = {
-    light: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+    var TILES = {
+    light: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri',
+      maxNativeZoom: 17,
+      bg: '#d9d3c4'
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri',
+      maxNativeZoom: 17,
+      bg: '#1b2a26'
+    },
+    dark: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      overlay: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors',
+      maxNativeZoom: 16,
+      bg: '#2b2b2b'
+    }
   };
+  var overlayLayer = null;
   
   var map = L.map('map', { zoomControl: false }).setView([25.4610, 68.7183], 13);
   map.attributionControl.setPrefix(false);
@@ -44,18 +61,30 @@ if (typeof L === 'undefined') {
 
   var tileLayer = null, currentTheme = null, pathLayer = null, pathSig = '', pathPts = [], playMarker = null;
 
-  function setTheme(theme) {
+    function setTheme(theme) {
     if (currentTheme === theme) return;
     currentTheme = theme;
     if (tileLayer) map.removeLayer(tileLayer);
-    var url = TILE_URLS[theme] || TILE_URLS.light;
-    tileLayer = L.tileLayer(url, {
-    maxNativeZoom: 17,
-    maxZoom: 19,
-    attribution: '&copy; Esri'
-    }).addTo(map);
-  }
+    if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
 
+    var cfg = TILES[theme] || TILES.light;
+    document.getElementById('map').style.background = cfg.bg;
+
+    tileLayer = L.tileLayer(cfg.url, {
+      maxNativeZoom: cfg.maxNativeZoom,
+      maxZoom: 19,
+      attribution: cfg.attribution
+    }).addTo(map);
+
+    // Dark layer: labels (roads, places) come from a separate reference layer
+    if (cfg.overlay) {
+      overlayLayer = L.tileLayer(cfg.overlay, {
+        maxNativeZoom: cfg.maxNativeZoom,
+        maxZoom: 19
+      }).addTo(map);
+    }
+  }
+    
   window.addEventListener('resize', function () { map.invalidateSize(); });
 
   window.__setPath = function (state) {

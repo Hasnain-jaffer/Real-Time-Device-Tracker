@@ -1,5 +1,6 @@
+// mobile/src/screens/LoginScreen.js
 import { useState } from 'react';
-import { Text, TouchableOpacity, ActivityIndicator, View } from 'react-native';
+import { Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AuthLayout from '../components/AuthLayout';
 import AuthField from '../components/AuthField';
@@ -24,19 +25,19 @@ export default function LoginScreen() {
     setBusy(true);
     try {
       await login(email.trim().toLowerCase(), password);
+      // This screen unmounts automatically once the user is no longer a guest
     } catch (err) {
       setError(
         err.response
-          ? err.response.data?.message || 'Login failed.'
+          ? err.response.data?.message || 'Sign in failed.'
           : 'Cannot reach the server. Check your connection and try again.'
       );
-    } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AuthLayout title="RoutePulse" subtitle="Track your campus bus in real time">
+    <AuthLayout title="My Campus Ride" subtitle="Sign in to your account">
       <AuthField
         label="Email"
         value={email}
@@ -46,18 +47,24 @@ export default function LoginScreen() {
         keyboardType="email-address"
         placeholder="you@example.com"
       />
-      <AuthField label="Password" value={password} onChangeText={setPassword} secure placeholder="Your password" onSubmitEditing={handleLogin} />
-
-      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={{ alignSelf: 'flex-end', marginBottom: 14 }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>Forgot password?</Text>
-      </TouchableOpacity>
+      <AuthField
+        label="Password"
+        value={password}
+        onChangeText={setPassword}
+        secure
+        placeholder="Your password"
+        onSubmitEditing={handleLogin}
+      />
 
       {!!error && <Text style={{ color: colors.critical, fontSize: 13, marginBottom: 10 }}>{error}</Text>}
 
       <TouchableOpacity
         onPress={handleLogin}
         disabled={busy}
-        style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: busy ? 0.7 : 1 }}
+        style={{
+          backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14,
+          alignItems: 'center', opacity: busy ? 0.7 : 1
+        }}
       >
         {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Sign in</Text>}
       </TouchableOpacity>
@@ -68,12 +75,12 @@ export default function LoginScreen() {
         </Text>
       )}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 22 }}>
-        <Text style={{ fontSize: 13.5, color: colors.textSecondary }}>New here? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={{ fontSize: 13.5, fontWeight: '700', color: colors.accent }}>Create an account</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ alignItems: 'center', marginTop: 24, paddingVertical: 12 }}
+      >
+        <Text style={{ fontSize: 14, color: colors.textSecondary }}>← Continue as guest</Text>
+      </TouchableOpacity>
     </AuthLayout>
   );
 }

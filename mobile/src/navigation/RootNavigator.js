@@ -8,9 +8,6 @@ import { useTheme } from '../context/ThemeContext';
 import { navigationRef } from './navigationRef';
 import AppHeader from '../components/AppHeader';
 import { IconHome, IconBus, IconMap, IconClock } from '../components/Icons';
-import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HomeScreen from '../screens/HomeScreen';
 import BusesScreen from '../screens/BusesScreen';
 import LiveMapScreen from '../screens/LiveMapScreen';
@@ -21,6 +18,8 @@ import BusDetailScreen from '../screens/BusDetailScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AdminPanelScreen from '../screens/AdminPanelScreen';
+import LoginScreen from '../screens/LoginScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -41,7 +40,6 @@ function Tabs() {
           return TabIcon ? <TabIcon size={size} color={color} /> : null;
         },
       })}
-      // FIX: Keep all tabs mounted AND attached — no detach = no white repaint flash
       lazy={false}
       unmountOnBlur={false}
       detachInactiveScreens={false}
@@ -56,14 +54,14 @@ function Tabs() {
 
 function AppStack() {
   const { colors } = useTheme();
+  const { isGuest, isAdmin } = useAuth();
+
   return (
     <Stack.Navigator
       screenOptions={{
         header: (props) => <AppHeader {...props} />,
         contentStyle: { backgroundColor: colors.bgPage },
         freezeOnBlur: false,
-        // FIX: Don't detach the screen underneath when a new one is pushed.
-        // On back, the previous screen is already painted = zero white flash.
         detachPreviousScreen: false,
       }}
     >
@@ -82,12 +80,26 @@ function AppStack() {
       <Stack.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+
+      {/* Only registered for guests: the sign-in screen */}
+      {isGuest && (
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false, presentation: 'modal' }}
+        />
+      )}
+
+      {/* Only registered for admins: the admin panel */}
+      {isAdmin && (
+        <Stack.Screen name="AdminPanel" component={AdminPanelScreen} options={{ title: 'Admin Panel' }} />
+      )}
     </Stack.Navigator>
   );
 }
 
 export default function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const { colors, isDark } = useTheme();
 
   if (isLoading) {
@@ -113,15 +125,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer theme={navTheme} ref={navigationRef}>
-      {user ? (
-        <AppStack />
-      ) : (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        </Stack.Navigator>
-      )}
+      <AppStack />
     </NavigationContainer>
   );
 }

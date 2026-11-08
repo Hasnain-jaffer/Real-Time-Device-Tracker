@@ -1,8 +1,10 @@
+// mobile/src/screens/ProfileScreen.js
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import apiClient from '../lib/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -10,12 +12,15 @@ import { useTheme } from '../context/ThemeContext';
 function Message({ msg, colors }) {
   if (!msg) return null;
   return (
-    <Text style={{ fontSize: 13, marginTop: 10, color: msg.ok ? colors.badgeSuccessText : colors.critical }}>{msg.text}</Text>
+    <Text style={{ fontSize: 13, marginTop: 10, color: msg.ok ? colors.badgeSuccessText : colors.critical }}>
+      {msg.text}
+    </Text>
   );
 }
 
 export default function ProfileScreen() {
-  const { user, logout, updateUser } = useAuth();
+  const navigation = useNavigation();
+  const { user, logout, updateUser, isGuest, isAdmin } = useAuth();
   const { colors } = useTheme();
 
   const [name, setName] = useState(user?.name || '');
@@ -56,7 +61,7 @@ export default function ProfileScreen() {
       updateUser({ name: data.user.name });
       setNameMsg({ ok: true, text: 'Profile updated.' });
     } catch (err) {
-      setNameMsg({ ok: false, text: err.response?.data?.message || 'Could not update your profile. Check your connection.' });
+      setNameMsg({ ok: false, text: err.response?.data?.message || 'Could not update your profile.' });
     } finally {
       setSavingName(false);
     }
@@ -75,7 +80,7 @@ export default function ProfileScreen() {
     setPwMsg(null);
     try {
       await apiClient.post('/profile/change-password', { currentPassword, newPassword });
-      setPwMsg({ ok: true, text: 'Password changed. Signing you out so you can log in again…' });
+      setPwMsg({ ok: true, text: 'Password changed. Signing you out…' });
       setTimeout(() => logout(), 1500);
     } catch (err) {
       setPwMsg({ ok: false, text: err.response?.data?.message || 'Could not change the password.' });
@@ -101,24 +106,88 @@ export default function ProfileScreen() {
     ]);
   }
 
+  // Guest view
+  if (isGuest) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.bgPage }} contentContainerStyle={{ padding: 16 }}>
+        <View style={[card, { alignItems: 'center', paddingVertical: 32 }]}>
+          <View style={{
+            width: 80, height: 80, borderRadius: 40, backgroundColor: colors.accent + '20',
+            alignItems: 'center', justifyContent: 'center', marginBottom: 16
+          }}>
+            <Text style={{ fontSize: 32 }}>👤</Text>
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 }}>
+            Welcome to My Campus Ride
+          </Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>
+            You're browsing as a guest. Live bus locations, routes and schedules are available without an account. Sign in if you have one.
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            style={{
+              backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14,
+              paddingHorizontal: 32, alignItems: 'center', width: '100%'
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Sign in</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={card}>
+          <Text style={heading}>About</Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 19 }}>
+            My Campus Ride — Real-time university bus tracking with live locations, stop alerts and schedule delays.
+            {'\n'}{'\n'}
+            Final Year Project, Sindh Agriculture University, Tandojam.
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // Signed-in view
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={{ flex: 1, backgroundColor: colors.bgPage }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
         <View style={[card, { alignItems: 'center' }]}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '700' }}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '700' }}>
+              {user?.name?.[0]?.toUpperCase() || 'U'}
+            </Text>
           </View>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 10 }}>{user?.name}</Text>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>{user?.email}</Text>
-          <View style={{ marginTop: 8, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.badgeSuccessBg }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.badgeSuccessText, textTransform: 'capitalize' }}>{user?.role}</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 10 }}>
+            {user?.name}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+            {user?.email}
+          </Text>
+          <View style={{
+            marginTop: 8, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999,
+            backgroundColor: isAdmin ? colors.accent + '20' : colors.badgeSuccessBg
+          }}>
+            <Text style={{
+              fontSize: 12, fontWeight: '600',
+              color: isAdmin ? colors.accent : colors.badgeSuccessText,
+              textTransform: 'capitalize'
+            }}>
+              {user?.role}
+            </Text>
           </View>
         </View>
 
         <View style={card}>
           <Text style={heading}>Basic info</Text>
           <Text style={label}>Full name</Text>
-          <TextInput style={input} value={name} onChangeText={setName} maxLength={60} placeholder="Your name" placeholderTextColor={colors.textMuted} />
+          <TextInput
+            style={input}
+            value={name}
+            onChangeText={setName}
+            maxLength={60}
+            placeholder="Your name"
+            placeholderTextColor={colors.textMuted}
+          />
           <Text style={label}>Email</Text>
           <TextInput style={[input, { opacity: 0.6 }]} value={user?.email} editable={false} />
           <TouchableOpacity onPress={saveName} disabled={savingName} style={button(savingName)}>
@@ -130,18 +199,47 @@ export default function ProfileScreen() {
         <View style={card}>
           <Text style={heading}>Change password</Text>
           <Text style={label}>Current password</Text>
-          <TextInput style={input} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry autoCapitalize="none" placeholderTextColor={colors.textMuted} />
+          <TextInput
+            style={input}
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            placeholderTextColor={colors.textMuted}
+          />
           <Text style={label}>New password (min. 8 characters)</Text>
-          <TextInput style={input} value={newPassword} onChangeText={setNewPassword} secureTextEntry autoCapitalize="none" placeholderTextColor={colors.textMuted} />
+          <TextInput
+            style={input}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            placeholderTextColor={colors.textMuted}
+          />
           <TouchableOpacity onPress={changePassword} disabled={savingPw} style={button(savingPw)}>
             {savingPw ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Update password</Text>}
           </TouchableOpacity>
           <Message msg={pwMsg} colors={colors} />
         </View>
 
+        {isAdmin && (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('AdminPanel')}
+            style={{
+              borderWidth: 1, borderColor: colors.accent, backgroundColor: colors.accent + '10',
+              borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 14
+            }}
+          >
+            <Text style={{ color: colors.accent, fontSize: 15, fontWeight: '600' }}>Open Admin Panel</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           onPress={logout}
-          style={{ borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSurface, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 14 }}
+          style={{
+            borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSurface,
+            borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginBottom: 14
+          }}
         >
           <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }}>Log out</Text>
         </TouchableOpacity>
@@ -151,7 +249,14 @@ export default function ProfileScreen() {
           <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginBottom: 12 }}>
             Permanently removes your account. This cannot be undone.
           </Text>
-          <TouchableOpacity onPress={confirmDelete} disabled={deleting} style={{ borderWidth: 1, borderColor: colors.critical, borderRadius: 12, paddingVertical: 12, alignItems: 'center', opacity: deleting ? 0.6 : 1 }}>
+          <TouchableOpacity
+            onPress={confirmDelete}
+            disabled={deleting}
+            style={{
+              borderWidth: 1, borderColor: colors.critical, borderRadius: 12,
+              paddingVertical: 12, alignItems: 'center', opacity: deleting ? 0.6 : 1
+            }}
+          >
             {deleting ? <ActivityIndicator color={colors.critical} /> : <Text style={{ color: colors.critical, fontWeight: '600', fontSize: 14 }}>Delete my account</Text>}
           </TouchableOpacity>
         </View>

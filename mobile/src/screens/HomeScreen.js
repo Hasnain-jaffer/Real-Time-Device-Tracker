@@ -79,7 +79,7 @@ export default function HomeScreen() {
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
     >
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>Welcome back, {user?.name?.split(' ')[0] || 'there'} 👋</Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.textPrimary }}>Welcome back, {user?.name?.split(' ')[0] || 'there'}</Text>
       <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 3 }}>
         {liveBuses.length} bus{liveBuses.length !== 1 ? 'es' : ''} live · {isConnected ? 'all systems normal' : 'reconnecting…'}
       </Text>

@@ -8,9 +8,10 @@ import { useSocket } from './SocketContext';
 const NotificationsContext = createContext(null);
 
 export function NotificationsProvider({ children }) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { socket } = useSocket();
-  const userId = user?.id;
+  // Guests have no account, so they have no personal notifications
+  const userId = user && !isGuest ? user.id : null;
 
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -46,6 +47,7 @@ export function NotificationsProvider({ children }) {
       setUnreadCount(0);
       setLatest(null);
       setLoading(true);
+      setError('');
       knownIds.current = new Set();
       return;
     }

@@ -1,14 +1,18 @@
 // mobile/src/screens/AlertsScreen.js
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useNotifications } from '../context/NotificationsContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { notificationMeta } from '../utils/notificationMeta';
 import { timeAgo } from '../utils/geo';
 import { NotificationIcon, IconBell } from '../components/Icons';
 
 export default function AlertsScreen() {
+  const navigation = useNavigation();
   const { colors } = useTheme();
+  const { isGuest } = useAuth();
   const { items, unreadCount, loading, error, refresh, markRead, markAllRead } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -22,6 +26,30 @@ export default function AlertsScreen() {
     setRefreshing(true);
     await refresh();
     setRefreshing(false);
+  }
+
+  // Guests have no personal notifications
+  if (isGuest) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bgPage, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <IconBell size={36} color={colors.textMuted} />
+        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginTop: 12 }}>
+          Sign in to see your alerts
+        </Text>
+        <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 6, textAlign: 'center', lineHeight: 19 }}>
+          Alerts are saved to your account. Live bus locations, routes and schedules work without signing in.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Login')}
+          style={{
+            backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12,
+            paddingHorizontal: 32, marginTop: 20,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Sign in</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   const header = (

@@ -9,6 +9,7 @@ import { useTheme } from '../app/ThemeContext';
 import { useAuth } from '../app/AuthContext';
 import { useToast } from '../app/ToastContext';
 import ScheduleEditor from '../features/schedule/components/ScheduleEditor';
+import ScheduleViewer from '../features/schedule/components/ScheduleViewer';
 
 /* ─── SVG Icons ─── */
 const IconBus = ({ size = 14, className = '', style = {} }) => (
@@ -449,8 +450,10 @@ export default function RouteDetailsPage() {
           </div>
         )}
 
-        {isAdmin && stops.length > 0 && (
-          <ScheduleEditor stops={stops} buses={buses} tokens={tokens} />
+        {stops.length > 0 && (
+          isAdmin
+            ? <ScheduleEditor stops={stops} buses={buses} tokens={tokens} />
+            : <ScheduleViewer stops={stops} buses={buses} />
         )}
       </div>
 

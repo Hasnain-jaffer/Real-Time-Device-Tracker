@@ -46,7 +46,7 @@ const darkTokens = {
  * adminOnly:  only signed-in admins may view this page (the server enforces it too)
  * neither:    a signed-in account is required
  */
-export default function ProtectedRoute({ children, allowGuest = false, adminOnly = false }) {
+export default function ProtectedRoute({ children, allowGuest = false, adminOnly = false, guestFallback = null }) {  
   const { isLoading, isGuest, isAdmin } = useAuth();
   const { theme } = useTheme();
   const location = useLocation();
@@ -86,6 +86,7 @@ export default function ProtectedRoute({ children, allowGuest = false, adminOnly
   }
 
   if (isGuest && !allowGuest) {
+    if (guestFallback) return guestFallback;
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

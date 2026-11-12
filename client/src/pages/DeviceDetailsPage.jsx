@@ -204,6 +204,14 @@ export default function DeviceDetailsPage() {
                 No route assigned
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => document.getElementById('route-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              Schedule
+            </button>
             {isAdmin && (
               <Link
                 to="/devices"
@@ -219,7 +227,7 @@ export default function DeviceDetailsPage() {
 
         {/* Route schedule */}
         <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}>
-          <h2 className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>Route schedule</h2>
+          <h2 id="route-schedule" className="scroll-mt-24 text-sm font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)' }}>Route schedule</h2>
           <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>Expected vs actual arrival at each stop today.</p>
           <ScheduleTable stops={scheduleStops} isLoading={scheduleLoading} tokens={tokens} />
         </div>

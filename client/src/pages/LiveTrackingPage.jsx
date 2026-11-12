@@ -11,6 +11,7 @@ import { useUserLocation } from '../features/tracking/hooks/useUserLocation';
 import MapSizeFix from '../components/map/MapSizeFix';
 import TrackingPanel from '../features/tracking/components/TrackingPanel';
 import DistanceEtaCard from '../features/tracking/components/DistanceEtaCard';
+import TrackerControl from '../features/tracking/components/TrackerControl';
 
 /* ─── SVG Icons ─── */
 const IconSearch = ({ size = 16, className = '', style = {} }) => (
@@ -209,6 +210,10 @@ export default function LiveTrackingPage() {
 
         {/* Panel */}
         <div className="flex-1 overflow-y-auto min-h-0 p-3">
+          <p className="text-xs text-muted mb-2">
+            Share your location with the system.
+          </p>
+          <TrackerControl />
           <TrackingPanel
             devices={trackedDevices}
             hiddenIds={hiddenIds}

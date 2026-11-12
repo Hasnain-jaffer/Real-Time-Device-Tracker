@@ -127,10 +127,12 @@ const NAV_ITEMS = [
   { to: '/devices', label: 'Devices', Icon: IconBus },
   { to: '/tracking', label: 'Live tracking', Icon: IconMapPin },
   { to: '/history', label: 'History', Icon: IconClock },
+  { to: '/notifications', label: 'Alerts', Icon: IconBell },
   { to: '/analytics', label: 'Analytics', Icon: IconBarChart, adminOnly: true },
   { to: '/route-center', label: 'Route Center', Icon: IconMap, adminOnly: true },
   { to: '/admin', label: 'Admin', Icon: IconShield, adminOnly: true },
-  { to: '/settings', label: 'Settings', Icon: IconSettings, authOnly: true },
+  { to: '/settings', label: 'Settings', Icon: IconSettings },
+  { to: '/profile', label: 'Profile', Icon: IconUser },
 ];
 
 const lightTokens = {
@@ -168,9 +170,7 @@ export default function Navbar() {
 
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
   const isOnAdminRoute = location.pathname.startsWith('/admin');
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => (!item.adminOnly || isAdmin) && (!item.authOnly || !isGuest)
-  );
+  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
 
   // Personal notifications only exist for signed-in accounts
   useEffect(() => {

@@ -7,6 +7,7 @@ import { ThemeProvider } from './app/ThemeContext';
 import { ToastProvider } from './app/ToastContext';
 import { useTheme } from './app/ThemeContext';
 import ProtectedRoute from './app/ProtectedRoute';
+import SignInPrompt from './app/SignInPrompt';
 import AppLayout from './components/layout/AppLayout';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -34,11 +35,32 @@ const NotFoundPage = lazy(() => import('./pages/static/NotFoundPage'));
 const RouteDetailsPage = lazy(() => import('./pages/RouteDetailsPage'));
 const RouteCenterPage = lazy(() => import('./pages/RouteCenterPage'));
 
-// Default: a signed-in account is required.
+const GATES = {
+  notifications: {
+    title: 'Sign in to see your alerts',
+    message: 'Alerts are saved to your account. Live bus locations, routes and schedules work without signing in.',
+  },
+  profile: {
+    title: 'Sign in to open your profile',
+    message: 'Your profile belongs to your account. You can keep browsing buses as a guest.',
+  },
+  settings: {
+    title: 'Sign in to open your settings',
+    message: 'Account settings need an account. You can keep browsing buses as a guest.',
+  },
+};
+
+// Default: a signed-in account is required (guests see a sign-in prompt when `gate` is set).
 // allowGuest: open to everyone. adminOnly: admins only.
-function Protected({ children, allowGuest = false, adminOnly = false }) {
+function Protected({ children, allowGuest = false, adminOnly = false, gate = null }) {
+  const guestFallback = gate ? (
+    <AppLayout>
+      <SignInPrompt title={gate.title} message={gate.message} />
+    </AppLayout>
+  ) : null;
+
   return (
-    <ProtectedRoute allowGuest={allowGuest} adminOnly={adminOnly}>
+    <ProtectedRoute allowGuest={allowGuest} adminOnly={adminOnly} guestFallback={guestFallback}>
       <AppLayout>{children}</AppLayout>
     </ProtectedRoute>
   );
@@ -131,9 +153,9 @@ export default function App() {
                 <Route path="/routes/:routeId" element={<Protected allowGuest><RouteDetailsPage /></Protected>} />
 
                 {/* Signed-in accounts only */}
-                <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
-                <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
-                <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+                <Route path="/notifications" element={<Protected gate={GATES.notifications}><NotificationsPage /></Protected>} />
+                <Route path="/profile" element={<Protected gate={GATES.profile}><ProfilePage /></Protected>} />
+                <Route path="/settings" element={<Protected gate={GATES.settings}><SettingsPage /></Protected>} />
 
                 {/* Admins only (also enforced on the server) */}
                 <Route path="/route-center" element={<Protected adminOnly><RouteCenterPage /></Protected>} />

@@ -1,6 +1,7 @@
 // client/src/pages/LandingPage.jsx
 import { Link } from 'react-router-dom';
 import { useTheme } from '../app/ThemeContext';
+import { useAuth } from '../app/AuthContext';
 
 /* ─── SVG Icons ─── */
 const IconLogo = ({ size = 24, className = '', style = {} }) => (
@@ -55,12 +56,6 @@ const IconArrowRight = ({ size = 16, className = '', style = {} }) => (
 const IconCheck = ({ size = 16, className = '', style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const IconGithub = ({ size = 18, className = '', style = {} }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
-    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
   </svg>
 );
 
@@ -127,12 +122,14 @@ function StepNumber({ n }) {
 
 export default function LandingPage() {
   const { theme } = useTheme();
+  const { isGuest, isLoading } = useAuth();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
   const accentHex = tokens['--accent-primary'];
+  const isSignedIn = !isLoading && !isGuest;
 
   return (
     <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="min-h-screen flex flex-col">
-      
+
       {/* ─── Navigation ─── */}
       <header
         className="sticky top-0 z-50 px-5 sm:px-8 py-4 flex items-center justify-between backdrop-blur-xl"
@@ -171,20 +168,32 @@ export default function LandingPage() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            to="/login"
-            className="hidden sm:block px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-80"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            Log in
-          </Link>
-          <Link
-            to="/register"
-            className="px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: accentHex, boxShadow: cardShadow }}
-          >
-            Get Started
-          </Link>
+          {isSignedIn ? (
+            <Link
+              to="/dashboard"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: accentHex, boxShadow: cardShadow }}
+            >
+              Open dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="hidden sm:block px-4 py-2 rounded-xl text-sm font-semibold transition hover:opacity-80"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/tracking"
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
+                style={{ backgroundColor: accentHex, boxShadow: cardShadow }}
+              >
+                Track buses
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -210,44 +219,43 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]" style={{ color: 'var(--text-primary)' }}>
-            Real-time fleet tracking,{' '}
-            <span style={{ color: accentHex }}>without the complexity.</span>
+            Know where your campus bus is,{' '}
+            <span style={{ color: accentHex }}>right now.</span>
           </h1>
 
           <p className="text-base sm:text-lg mt-6 max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Live location updates, full route history with playback, and secure
-            team management — built for bus operators and logistics teams who need
-            to know where every vehicle is, right now.
+            Live bus locations, route stops and arrival times for Sindh Agriculture
+            University, Tandojam. Open the app and start tracking. No account needed.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
             <Link
-              to="/register"
+              to="/tracking"
               className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98]"
               style={{ backgroundColor: accentHex, boxShadow: '0 4px 20px ' + accentHex + '40' }}
             >
-              Create Free Account
+              Track buses now
               <IconArrowRight size={16} />
             </Link>
             <Link
-              to="/login"
+              to={isSignedIn ? '/dashboard' : '/login'}
               className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-sm font-bold transition hover:bg-black/5 active:scale-[0.98]"
               style={{ color: 'var(--text-primary)', border: '1px solid var(--border)' }}
             >
-              Sign In
+              {isSignedIn ? 'Open dashboard' : 'Sign in'}
             </Link>
           </div>
 
           {/* Mini trust bar */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-12 text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
             <span className="flex items-center gap-1.5">
-              <IconCheck size={12} style={{ color: accentHex }} /> No credit card
+              <IconCheck size={12} style={{ color: accentHex }} /> No account needed
             </span>
             <span className="flex items-center gap-1.5">
-              <IconCheck size={12} style={{ color: accentHex }} /> Free forever plan
+              <IconCheck size={12} style={{ color: accentHex }} /> Live updates
             </span>
             <span className="flex items-center gap-1.5">
-              <IconCheck size={12} style={{ color: accentHex }} /> Setup in 2 minutes
+              <IconCheck size={12} style={{ color: accentHex }} /> Works on any device
             </span>
           </div>
         </div>
@@ -317,10 +325,10 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Up and running in minutes
+              Up and running in seconds
             </h2>
             <p className="text-[13px] sm:text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-              No hardware required. No complex configuration.
+              No sign-up. No setup.
             </p>
           </div>
 
@@ -328,18 +336,18 @@ export default function LandingPage() {
             {[
               {
                 n: 1,
-                title: 'Register your fleet',
-                desc: 'Create an account, add your buses, and assign unique identifiers. Invite team members with role-based access.',
+                title: 'Open My Campus Ride',
+                desc: 'Open the website or the Android app and you are in. Browsing buses, routes and the live map needs no account.',
               },
               {
                 n: 2,
-                title: 'Configure stops',
-                desc: 'Drop geofence pins on the map for every stop. Set radius, name, and type — arrivals and departures are tracked automatically.',
+                title: 'Find your bus',
+                desc: 'Browse buses and routes, or just ask which bus goes where. Stops and schedules are listed for every route.',
               },
               {
                 n: 3,
-                title: 'Track in real time',
-                desc: 'Open the Live Tracking dashboard and watch your fleet move. Review history, export data, and receive alerts instantly.',
+                title: 'Track it live',
+                desc: 'Watch the bus move on the map and see its distance and arrival time. Sign in if you want stop alerts saved to your account.',
               },
             ].map((step) => (
               <div key={step.n} className="flex items-start gap-4 sm:gap-5">
@@ -364,18 +372,18 @@ export default function LandingPage() {
           }}
         >
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight relative z-10">
-            Ready to track your fleet?
+            Ready to find your bus?
           </h2>
           <p className="text-sm sm:text-base mt-3 text-white/80 relative z-10 max-w-lg mx-auto">
-            Join operators who use RoutePulse to monitor buses, manage stops, and keep passengers informed.
+            Open the live map and see where every campus bus is right now.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8 relative z-10">
             <Link
-              to="/register"
+              to="/tracking"
               className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-sm font-bold transition hover:opacity-90 active:scale-[0.98]"
               style={{ backgroundColor: '#fff', color: accentHex }}
             >
-              Get Started Free
+              Track buses now
               <IconArrowRight size={16} />
             </Link>
             <Link

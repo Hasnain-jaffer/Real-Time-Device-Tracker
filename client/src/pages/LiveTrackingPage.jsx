@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
 import { useTheme } from '../app/ThemeContext';
+import { useAuth } from '../app/AuthContext';
 import { useSocket } from '../app/SocketProvider';
 import { useUserLocation } from '../features/tracking/hooks/useUserLocation';
 import MapSizeFix from '../components/map/MapSizeFix';
@@ -132,6 +133,7 @@ function RecenterControl({ position }) {
 export default function LiveTrackingPage() {
   const { trackedDevices } = useTrackedDevices();
   const { theme } = useTheme();
+  const { isGuest } = useAuth();
   const { socket } = useSocket();
   const navigate = useNavigate();
   const { position: userPosition } = useUserLocation();
@@ -144,22 +146,22 @@ export default function LiveTrackingPage() {
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
   const isDark = theme === 'dark';
 
+  // Guests only watch the buses. They never broadcast their own position,
+  // otherwise every student's phone would show up on the map as a "bus".
   useEffect(() => {
-    let watchId;
-    if (navigator.geolocation && socket) {
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          socket.emit('send-location', { latitude, longitude });
-        },
-        (error) => console.error('[geolocation]', error),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-    }
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-    };
-  }, [socket]);
+    if (isGuest || !socket || !navigator.geolocation) return undefined;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        socket.emit('send-location', { latitude, longitude });
+      },
+      (error) => console.error('[geolocation]', error),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [socket, isGuest]);
 
   const selected =
     trackedDevices.find((d) => d.key === selectedKey) ||
@@ -189,7 +191,7 @@ export default function LiveTrackingPage() {
 
   return (
     <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full min-h-full flex flex-col lg:h-full lg:min-h-0 lg:flex-row lg:overflow-hidden">
-      
+
       {/* Sidebar */}
       <div
         className="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col overflow-hidden"
@@ -277,7 +279,7 @@ export default function LiveTrackingPage() {
         {/* Map overlays */}
         {trackedDevices.length > 0 && selected && (
           <>
-            {/* Layer switcher (top-left) */}
+            {/* Layer switcher */}
             <div
               className="absolute bottom-4 left-2 z-[400] flex flex-col gap-1 rounded-xl p-1"
               style={{
@@ -347,7 +349,6 @@ export default function LiveTrackingPage() {
                 </div>
               </div>
             </div>
-            
           </>
         )}
       </div>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
 import { useTheme } from '../../../app/ThemeContext';
+import { useAuth } from '../../../app/AuthContext';
 
 /* ─── SVG Icons ─── */
 const IconSearch = ({ size = 18, className = '', style = {} }) => (
@@ -84,10 +85,9 @@ const darkTokens = {
   '--accent-critical': '#C15D4C',
 };
 
-const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
-
 export default function GlobalSearchModal({ isOpen, onClose }) {
   const { theme } = useTheme();
+  const { isGuest } = useAuth();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
 
   const [query, setQuery] = useState('');
@@ -123,12 +123,13 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
       items.push({ kind: 'header', label: 'Stops', Icon: IconMapPin });
       results.geofences.forEach((g) => items.push({ kind: 'geofence', data: g }));
     }
-    if (results.notifications.length > 0) {
+    // Notifications are personal, so guests never see this section
+    if (!isGuest && results.notifications.length > 0) {
       items.push({ kind: 'header', label: 'Notifications', Icon: IconBell });
       results.notifications.forEach((n) => items.push({ kind: 'notification', data: n }));
     }
     return items;
-  }, [results]);
+  }, [results, isGuest]);
 
   const selectableItems = useMemo(() => allItems.filter((i) => i.kind !== 'header'), [allItems]);
   const selectableCount = selectableItems.length;
@@ -142,15 +143,21 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
     }
   }, [selectedIndex]);
 
-  function goToItem(item) {
-    if (item.kind === 'device') goTo(`/devices/${item.data._id}`);
-    else if (item.kind === 'geofence') goTo('/stops');
-    else if (item.kind === 'notification') goTo('/notifications');
-  }
-
   function goTo(path) {
     navigate(path);
     onClose();
+  }
+
+  function goToItem(item) {
+    if (item.kind === 'device') {
+      goTo(`/devices/${item.data._id}`);
+    } else if (item.kind === 'geofence') {
+      // There is no /stops page: open the route this stop belongs to
+      const routeId = item.data.routeId?._id || item.data.routeId;
+      goTo(routeId ? `/routes/${routeId}` : '/devices');
+    } else if (item.kind === 'notification') {
+      goTo('/notifications');
+    }
   }
 
   function handleInputKeyDown(e) {
@@ -174,7 +181,7 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
   return (
     <div
       className="fixed inset-0 z-[3000] flex items-start justify-center pt-[15vh] px-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+      style={{ ...tokens, backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -188,13 +195,13 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
         {/* ─── Input ─── */}
         <div className="relative flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <IconSearch size={20} style={{ color: 'var(--text-muted)' }} className="flex-shrink-0" />
-          
+
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Search buses, stops, notifications…"
+            placeholder={isGuest ? 'Search buses and stops…' : 'Search buses, stops, notifications…'}
             className="flex-1 bg-transparent py-1 text-lg font-medium focus:outline-none focus:ring-0"
             style={{
               color: 'var(--text-primary)',
@@ -225,10 +232,9 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
         </div>
 
         {/* ─── Results ─── */}
-                {/* ─── Results ─── */}
         <div
           ref={listRef}
-          className="max-h-[460px] overflow-y-auto overflow-x-hidden py-2"
+          className="search-scroll max-h-[460px] overflow-y-auto overflow-x-hidden py-2"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'var(--border) transparent',
@@ -240,7 +246,7 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
             .search-scroll::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 20px; }
             .search-scroll::-webkit-scrollbar:horizontal { display: none !important; height: 0 !important; }
           `}</style>
-          
+
           {!query.trim() && (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <div
@@ -253,7 +259,7 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
                 Start typing to search
               </p>
               <p className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                Find buses, stops, and notifications instantly.
+                {isGuest ? 'Find buses and stops instantly.' : 'Find buses, stops, and notifications instantly.'}
               </p>
             </div>
           )}
@@ -370,9 +376,7 @@ export default function GlobalSearchModal({ isOpen, onClose }) {
             );
           })}
         </div>
-        </div>
-
-       
       </div>
+    </div>
   );
 }

@@ -107,7 +107,7 @@ const TILES = {
 };
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { socket, isConnected } = useSocket();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -131,9 +131,14 @@ export default function DashboardPage() {
     }).catch(() => {});
   }, []);
 
+  // Personal notifications only exist for signed-in accounts
   useEffect(() => {
+    if (isGuest) {
+      setUnreadCount(0);
+      return;
+    }
     apiClient.get('/notifications').then(({ data }) => setUnreadCount(data.unreadCount)).catch(() => {});
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
     function handleReceiveLocation(data) {
@@ -198,7 +203,9 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              Welcome back, {user?.name?.split(' ')[0] || 'there'}
+              {isGuest
+                ? 'Welcome to My Campus Ride'
+                : `Welcome back, ${user?.name?.split(' ')[0] || 'there'}`}
             </h1>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-secondary)' }}>
               {onlineCount} bus{onlineCount !== 1 ? 'es' : ''} live · {isConnected ? 'All systems normal' : 'Reconnecting…'}
@@ -243,22 +250,25 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <button
-              onClick={() => navigate('/notifications')}
-              className="relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-transform active:scale-95"
-              style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
-              aria-label="Notifications"
-            >
-              <IconBell size={18} style={{ color: 'var(--text-secondary)' }} />
-              {unreadCount > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: 'var(--badge-eta-bg)', color: 'var(--badge-eta-text)' }}
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
+            {/* Notifications belong to an account, so guests don't get the bell */}
+            {!isGuest && (
+              <button
+                onClick={() => navigate('/notifications')}
+                className="relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-transform active:scale-95"
+                style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
+                aria-label="Notifications"
+              >
+                <IconBell size={18} style={{ color: 'var(--text-secondary)' }} />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: 'var(--badge-eta-bg)', color: 'var(--badge-eta-text)' }}
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
 

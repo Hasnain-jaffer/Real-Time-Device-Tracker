@@ -1,7 +1,13 @@
 // client/src/features/schedule/components/ScheduleEditor.jsx
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as scheduleApi from '../api/scheduleApi';
 import { useToast } from '../../../app/ToastContext';
+
+function describeError(err) {
+  const status = err?.response?.status;
+  const message = err?.response?.data?.message || err?.message || 'Unknown error';
+  return status ? `${message} (${status})` : message;
+}
 
 export default function ScheduleEditor({ stops, buses, tokens = {} }) {
   const { showToast } = useToast();
@@ -10,6 +16,8 @@ export default function ScheduleEditor({ stops, buses, tokens = {} }) {
   const [times, setTimes] = useState({}); // stopId -> 'HH:mm' (or '' when cleared)
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const latestLoad = useRef(0); // ignores a slow response for a bus that is no longer selected
 
   const surface = tokens['--bg-surface'] || '#FFFFFF';
   const page = tokens['--bg-page'] || '#F4EFE6';
@@ -18,63 +26,75 @@ export default function ScheduleEditor({ stops, buses, tokens = {} }) {
   const textSecondary = tokens['--text-secondary'] || '#5B6B5F';
   const textMuted = tokens['--text-muted'] || '#9C8F73';
   const accent = tokens['--accent-primary'] || '#5E8C61';
+  const critical = tokens['--accent-critical'] || '#B94A3A';
 
   useEffect(() => {
     if (buses.length > 0 && !buses.some((b) => b._id === busId)) setBusId(buses[0]._id);
-  }, [buses]);
+  }, [buses, busId]);
 
-  async function load(id) {
+  const load = useCallback(async (id) => {
+    const mine = ++latestLoad.current;
     setIsLoading(true);
+    setLoadError('');
     try {
       const list = await scheduleApi.listDeviceSchedule(id);
+      if (mine !== latestLoad.current) return;
       const byStop = {};
       const draft = {};
       list.forEach((entry) => {
-        const stopId = entry.geofenceId?._id;
-        if (!stopId) return; // stop was deleted since this entry was created
+        // geofenceId is a populated object or a plain id, depending on the server
+        const stopId = entry.geofenceId?._id || entry.geofenceId;
+        if (!stopId) return; // the stop was deleted after this entry was created
         byStop[stopId] = entry;
-        draft[stopId] = entry.expectedTime;
+        draft[stopId] = entry.expectedTime || '';
       });
       setEntries(byStop);
       setTimes(draft);
-    } catch {
-      showToast('Could not load schedule', 'error');
+    } catch (err) {
+      if (mine !== latestLoad.current) return;
+      setEntries({});
+      setTimes({});
+      setLoadError(describeError(err));
     } finally {
-      setIsLoading(false);
+      if (mine === latestLoad.current) setIsLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     if (busId) load(busId);
-  }, [busId]);
+  }, [busId, load]);
 
   async function handleSave() {
+    // Work out what actually changed before sending anything
+    const ops = [];
+    stops.forEach((stop, i) => {
+      const time = times[stop._id] || '';
+      const existing = entries[stop._id];
+      if (existing && !time) {
+        ops.push(() => scheduleApi.deleteScheduleEntry(existing._id));
+      } else if (existing && existing.expectedTime !== time) {
+        ops.push(() => scheduleApi.updateScheduleEntry(existing._id, { expectedTime: time, sequence: i }));
+      } else if (!existing && time) {
+        ops.push(() =>
+          scheduleApi.createScheduleEntry({ deviceId: busId, geofenceId: stop._id, sequence: i, expectedTime: time })
+        );
+      }
+    });
+
+    if (ops.length === 0) {
+      showToast('No changes to save', 'info');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      for (let i = 0; i < stops.length; i++) {
-        const stop = stops[i];
-        const time = times[stop._id] || '';
-        const existing = entries[stop._id];
-
-        if (existing && !time) {
-          await scheduleApi.deleteScheduleEntry(existing._id);
-        } else if (existing && existing.expectedTime !== time) {
-          await scheduleApi.updateScheduleEntry(existing._id, { expectedTime: time, sequence: i });
-        } else if (!existing && time) {
-          await scheduleApi.createScheduleEntry({
-            deviceId: busId,
-            geofenceId: stop._id,
-            sequence: i,
-            expectedTime: time,
-          });
-        }
-      }
+      for (const op of ops) await op();
       showToast('Schedule saved', 'success');
-      await load(busId);
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to save schedule', 'error');
+      showToast(`Could not save: ${describeError(err)}`, 'error');
     } finally {
       setIsSaving(false);
+      load(busId); // show what the server really has, even after a partial failure
     }
   }
 
@@ -105,6 +125,18 @@ export default function ScheduleEditor({ stops, buses, tokens = {} }) {
         </p>
       ) : isLoading ? (
         <div className="h-24 rounded-xl animate-pulse" style={{ backgroundColor: page }} />
+      ) : loadError ? (
+        <div className="rounded-xl px-4 py-3" style={{ backgroundColor: page, border: `1px solid ${border}` }}>
+          <p className="text-sm font-medium" style={{ color: critical }}>Could not load this bus's schedule.</p>
+          <p className="text-xs mt-1" style={{ color: textMuted }}>{loadError}</p>
+          <button
+            onClick={() => load(busId)}
+            className="mt-3 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+            style={{ backgroundColor: accent }}
+          >
+            Try again
+          </button>
+        </div>
       ) : (
         <>
           <div className="space-y-2">

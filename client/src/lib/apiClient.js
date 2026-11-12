@@ -7,6 +7,13 @@ const apiClient = axios.create({
   withCredentials: true, // sends the httpOnly refreshToken cookie
 });
 
+// AuthContext registers this so a failed refresh drops the user back to guest
+// mode instead of force-redirecting everyone to the login page.
+let authFailureHandler = null;
+export function setAuthFailureHandler(fn) {
+  authFailureHandler = fn;
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
@@ -62,7 +69,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearAccessToken();
-        window.location.href = '/login';
+        authFailureHandler?.(); // back to guest mode; protected routes redirect on their own
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

@@ -1,18 +1,26 @@
 // client/src/app/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
-import apiClient from '../lib/apiClient';
-import { getAccessToken, setAccessToken, clearAccessToken } from '../lib/tokenStore';
+import apiClient, { setAuthFailureHandler } from '../lib/apiClient';
+import { setAccessToken, clearAccessToken } from '../lib/tokenStore';
+import { connectSocket, disconnectSocket } from '../lib/socketClient';
 
 const AuthContext = createContext(null);
+
+// Guests browse public data without an account
+const GUEST_USER = { id: 'guest', role: 'student', name: 'Guest', email: '' };
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On first load (or full page refresh), there's no access token in memory yet —
-  // silently try to get a new one using the httpOnly refresh cookie.
   useEffect(() => {
+    // If a token refresh fails anywhere in the app, fall back to guest mode
+    setAuthFailureHandler(() => setUser(GUEST_USER));
+
+    // On first load (or full page refresh) there is no access token in memory yet,
+    // so silently try to get one using the httpOnly refresh cookie.
+    // No cookie or an invalid one simply means the visitor is a guest.
     async function restoreSession() {
       try {
         const { data } = await axios.post(
@@ -26,7 +34,7 @@ export function AuthProvider({ children }) {
         setUser(meRes.data.user);
       } catch {
         clearAccessToken();
-        setUser(null);
+        setUser(GUEST_USER);
       } finally {
         setIsLoading(false);
       }
@@ -42,13 +50,25 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await apiClient.post('/auth/logout');
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // Sign out locally even if the server call fails
+    }
     clearAccessToken();
-    setUser(null);
+    setUser(GUEST_USER);
+    // Reconnect the socket so it stops receiving the previous user's private alerts
+    disconnectSocket();
+    connectSocket();
   }
 
+  const isGuest = !user || user.id === 'guest';
+  const isAdmin = !isGuest && user?.role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, setUser, isAuthenticated: !!getAccessToken() || !!user }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, logout, setUser, isGuest, isAdmin, isAuthenticated: !isGuest }}
+    >
       {children}
     </AuthContext.Provider>
   );

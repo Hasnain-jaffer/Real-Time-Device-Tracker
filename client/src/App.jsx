@@ -7,7 +7,6 @@ import { ThemeProvider } from './app/ThemeContext';
 import { ToastProvider } from './app/ToastContext';
 import { useTheme } from './app/ThemeContext';
 import ProtectedRoute from './app/ProtectedRoute';
-import AdminRoute from './app/AdminRoute';
 import AppLayout from './components/layout/AppLayout';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -35,10 +34,11 @@ const NotFoundPage = lazy(() => import('./pages/static/NotFoundPage'));
 const RouteDetailsPage = lazy(() => import('./pages/RouteDetailsPage'));
 const RouteCenterPage = lazy(() => import('./pages/RouteCenterPage'));
 
-
-function Protected({ children }) {
+// Default: a signed-in account is required.
+// allowGuest: open to everyone. adminOnly: admins only.
+function Protected({ children, allowGuest = false, adminOnly = false }) {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowGuest={allowGuest} adminOnly={adminOnly}>
       <AppLayout>{children}</AppLayout>
     </ProtectedRoute>
   );
@@ -122,37 +122,23 @@ export default function App() {
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/login" element={<LoginPage />} />
 
-                <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
-                <Route path="/devices" element={<Protected><DeviceCenterPage /></Protected>} />
-                <Route path="/devices/:id" element={<Protected><DeviceDetailsPage /></Protected>} />
-                <Route path="/tracking" element={<Protected><LiveTrackingPage /></Protected>} />
-                <Route path="/history" element={<Protected><DeviceHistoryPage /></Protected>} />
-                <Route path="/routes/:routeId" element={<Protected><RouteDetailsPage /></Protected>} />
-                <Route path="/route-center" element={<AdminRoute><AppLayout><RouteCenterPage /></AppLayout></AdminRoute>} />
-                <Route
-                  path="/analytics"
-                  element={
-                    <AdminRoute>
-                      <AppLayout>
-                        <AnalyticsPage />
-                      </AppLayout>
-                    </AdminRoute>
-                  }
-                />
+                {/* Open to everyone, including guests */}
+                <Route path="/dashboard" element={<Protected allowGuest><DashboardPage /></Protected>} />
+                <Route path="/devices" element={<Protected allowGuest><DeviceCenterPage /></Protected>} />
+                <Route path="/devices/:id" element={<Protected allowGuest><DeviceDetailsPage /></Protected>} />
+                <Route path="/tracking" element={<Protected allowGuest><LiveTrackingPage /></Protected>} />
+                <Route path="/history" element={<Protected allowGuest><DeviceHistoryPage /></Protected>} />
+                <Route path="/routes/:routeId" element={<Protected allowGuest><RouteDetailsPage /></Protected>} />
+
+                {/* Signed-in accounts only */}
                 <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
                 <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
                 <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
 
-                <Route
-                  path="/admin"
-                  element={
-                    <AdminRoute>
-                      <AppLayout>
-                        <AdminPage />
-                      </AppLayout>
-                    </AdminRoute>
-                  }
-                />
+                {/* Admins only (also enforced on the server) */}
+                <Route path="/route-center" element={<Protected adminOnly><RouteCenterPage /></Protected>} />
+                <Route path="/analytics" element={<Protected adminOnly><AnalyticsPage /></Protected>} />
+                <Route path="/admin" element={<Protected adminOnly><AdminPage /></Protected>} />
 
                 <Route path="/help" element={<HelpCenterPage />} />
                 <Route path="/contact" element={<ContactUsPage />} />

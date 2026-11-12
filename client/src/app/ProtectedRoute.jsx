@@ -1,5 +1,5 @@
 // client/src/app/ProtectedRoute.jsx
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useTheme } from './ThemeContext';
 
@@ -41,9 +41,15 @@ const darkTokens = {
   '--accent-primary': '#79B37C',
 };
 
-export default function ProtectedRoute({ children }) {
-  const { user, isLoading } = useAuth();
+/**
+ * allowGuest: visitors without an account may view this page
+ * adminOnly:  only signed-in admins may view this page (the server enforces it too)
+ * neither:    a signed-in account is required
+ */
+export default function ProtectedRoute({ children, allowGuest = false, adminOnly = false }) {
+  const { isLoading, isGuest, isAdmin } = useAuth();
   const { theme } = useTheme();
+  const location = useLocation();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
 
   if (isLoading) {
@@ -65,19 +71,22 @@ export default function ProtectedRoute({ children }) {
           >
             <IconLoader size={32} className="animate-spin" />
           </div>
-          <p
-            className="text-sm font-medium"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            Restoring your session…
+          <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Loading…
           </p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (adminOnly) {
+    if (isGuest) return <Navigate to="/login" state={{ from: location }} replace />;
+    if (!isAdmin) return <Navigate to="/dashboard" replace />;
+    return children;
+  }
+
+  if (isGuest && !allowGuest) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;

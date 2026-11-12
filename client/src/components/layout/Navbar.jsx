@@ -108,12 +108,19 @@ const IconLogout = ({ size = 16, className = '' }) => (
 
 const IconMap = ({ size = 18, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />  
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+  </svg>
+);
+
+const IconUser = ({ size = 16, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
   </svg>
 );
 
 /* ═══════════════════════════════════════════
    NAV CONFIG
+   adminOnly: admins only   authOnly: signed-in accounts only (hidden from guests)
    ═══════════════════════════════════════════ */
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', Icon: IconDashboard },
@@ -123,7 +130,7 @@ const NAV_ITEMS = [
   { to: '/analytics', label: 'Analytics', Icon: IconBarChart, adminOnly: true },
   { to: '/route-center', label: 'Route Center', Icon: IconMap, adminOnly: true },
   { to: '/admin', label: 'Admin', Icon: IconShield, adminOnly: true },
-  { to: '/settings', label: 'Settings', Icon: IconSettings },
+  { to: '/settings', label: 'Settings', Icon: IconSettings, authOnly: true },
 ];
 
 const lightTokens = {
@@ -150,7 +157,7 @@ const darkTokens = {
 
 export default function Navbar() {
   const { showToast } = useToast();
-  const { user, logout } = useAuth();
+  const { user, logout, isGuest, isAdmin } = useAuth();
   const { socket } = useSocket();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -160,11 +167,17 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
-  const isAdmin = user?.role === 'admin';
   const isOnAdminRoute = location.pathname.startsWith('/admin');
-  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => (!item.adminOnly || isAdmin) && (!item.authOnly || !isGuest)
+  );
 
+  // Personal notifications only exist for signed-in accounts
   useEffect(() => {
+    if (isGuest) {
+      setUnreadCount(0);
+      return undefined;
+    }
     let isMounted = true;
     function fetchUnread() {
       apiClient.get('/notifications').then(({ data }) => isMounted && setUnreadCount(data.unreadCount)).catch(() => {});
@@ -172,9 +185,10 @@ export default function Navbar() {
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
     return () => { isMounted = false; clearInterval(interval); };
-  }, []);
+  }, [isGuest]);
 
-    useEffect(() => {
+  useEffect(() => {
+    if (isGuest) return undefined;
     const TOAST_TYPE = {
       'device-offline': 'warning',
       'system-message': 'warning', // schedule delay alerts
@@ -186,7 +200,7 @@ export default function Navbar() {
     }
     socket.on('notification', handleNewNotification);
     return () => socket.off('notification', handleNewNotification);
-  }, [socket, showToast]);
+  }, [socket, showToast, isGuest]);
 
   useEffect(() => {
     function handleKeyDown(e) {
@@ -204,8 +218,8 @@ export default function Navbar() {
   }, [location.pathname]);
 
   async function handleLogout() {
+    navigate('/'); // leave any account-only page first, then sign out
     await logout();
-    navigate('/login');
   }
 
   const NavList = ({ onItemClick }) => (
@@ -296,35 +310,62 @@ export default function Navbar() {
         </span>
       </button>
 
-      {/* User */}
-      <div
-        onClick={() => { onNavigate?.(); navigate('/profile'); }}
-        className="flex items-center gap-2.5 px-3 pt-3 pb-1 mt-3 border-t cursor-pointer hover:bg-white/[0.04] rounded-lg transition-colors"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <span
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-          style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
-        >
-          {user?.name?.[0]?.toUpperCase() || 'U'}
-        </span>
-        <div className="min-w-0">
-          <p className="text-[13px] truncate font-medium" style={{ color: 'var(--text-nav-active)' }}>{user?.name}</p>
-          <p className="text-[11px] capitalize" style={{ color: 'var(--text-nav-inactive)' }}>{user?.role}</p>
+      {isGuest ? (
+        /* Guest: no profile or logout, just a sign-in option */
+        <div className="px-3 pt-3 pb-1 mt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2.5">
+            <span
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: 'var(--text-nav-active)' }}
+            >
+              <IconUser size={15} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] truncate font-medium" style={{ color: 'var(--text-nav-active)' }}>Guest</p>
+              <p className="text-[11px]" style={{ color: 'var(--text-nav-inactive)' }}>Browsing without an account</p>
+            </div>
+          </div>
+          <button
+            onClick={() => { onNavigate?.(); navigate('/login'); }}
+            className="mt-3 w-full rounded-xl py-2 text-[13px] font-semibold text-white hover:opacity-90 transition"
+            style={{ backgroundColor: 'var(--accent-primary)' }}
+          >
+            Sign in
+          </button>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* User */}
+          <div
+            onClick={() => { onNavigate?.(); navigate('/profile'); }}
+            className="flex items-center gap-2.5 px-3 pt-3 pb-1 mt-3 border-t cursor-pointer hover:bg-white/[0.04] rounded-lg transition-colors"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            <span
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+              style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
+            >
+              {user?.name?.[0]?.toUpperCase() || 'U'}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] truncate font-medium" style={{ color: 'var(--text-nav-active)' }}>{user?.name}</p>
+              <p className="text-[11px] capitalize" style={{ color: 'var(--text-nav-inactive)' }}>{user?.role}</p>
+            </div>
+          </div>
 
-      <button
-        onClick={() => {
-          onNavigate?.();
-          handleLogout();
-        }}
-        className="flex items-center gap-2 text-[13px] w-full text-left px-3 py-2 rounded-lg transition-colors duration-150 mt-1 hover:bg-white/[0.04]"
-        style={{ color: 'var(--text-nav-inactive)' }}
-      >
-        <IconLogout size={15} />
-        Log out
-      </button>
+          <button
+            onClick={() => {
+              onNavigate?.();
+              handleLogout();
+            }}
+            className="flex items-center gap-2 text-[13px] w-full text-left px-3 py-2 rounded-lg transition-colors duration-150 mt-1 hover:bg-white/[0.04]"
+            style={{ color: 'var(--text-nav-inactive)' }}
+          >
+            <IconLogout size={15} />
+            Log out
+          </button>
+        </>
+      )}
     </div>
   );
 
@@ -384,22 +425,34 @@ export default function Navbar() {
           >
             <IconSearch size={18} />
           </button>
-          <button
-            onClick={() => navigate('/notifications')}
-            className="relative p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-            aria-label="Notifications"
-            style={{ color: 'var(--text-nav-inactive)' }}
-          >
-            <IconBell size={18} />
-            {unreadCount > 0 && (
-              <span
-                className="absolute top-0 right-0 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none"
-                style={{ backgroundColor: 'var(--badge-eta-bg)', color: 'var(--badge-eta-text)' }}
-              >
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
+
+          {isGuest ? (
+            <button
+              onClick={() => navigate('/login')}
+              className="text-[12px] font-semibold px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+              style={{ backgroundColor: 'var(--accent-primary)', color: '#fff' }}
+            >
+              Sign in
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/notifications')}
+              className="relative p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              aria-label="Notifications"
+              style={{ color: 'var(--text-nav-inactive)' }}
+            >
+              <IconBell size={18} />
+              {unreadCount > 0 && (
+                <span
+                  className="absolute top-0 right-0 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none"
+                  style={{ backgroundColor: 'var(--badge-eta-bg)', color: 'var(--badge-eta-text)' }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
             onClick={() => setIsDrawerOpen(true)}
             aria-label="Open menu"

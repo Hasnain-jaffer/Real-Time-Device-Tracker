@@ -1,7 +1,7 @@
 // client/src/pages/LoginPage.jsx
 import { useState } from 'react';
 import { useAuth } from '../app/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../app/ThemeContext';
 
 /* ─── SVG Icons ─── */
@@ -64,8 +64,12 @@ const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 export default function LoginPage() {
   const { theme } = useTheme();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
-  const { login } = useAuth();
+  const { login, isGuest, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Send the user back to the page that asked them to sign in
+  const redirectTo = location.state?.from?.pathname || '/dashboard';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -78,12 +82,17 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Sign in failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  // Already signed in: nothing to do on this page
+  if (!isLoading && !isGuest) {
+    return <Navigate to={redirectTo} replace />;
   }
 
   return (
@@ -110,9 +119,9 @@ export default function LoginPage() {
           style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
         >
           <div>
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Welcome back</h1>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Sign in</h1>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>
-              Sign in to continue tracking your devices.
+              Sign in to your account.
             </p>
           </div>
 
@@ -130,7 +139,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder="you@example.com"
                   className="w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-[1.5px] transition-all"
                   style={{
                     backgroundColor: 'var(--bg-page)',
@@ -212,6 +221,13 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        {/* Guest option */}
+        <p className="text-center text-[13px] mt-5">
+          <Link to="/dashboard" className="font-medium hover:underline transition" style={{ color: 'var(--text-secondary)' }}>
+            ← Continue as guest
+          </Link>
+        </p>
       </div>
     </div>
   );

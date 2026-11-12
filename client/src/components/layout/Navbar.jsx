@@ -127,12 +127,10 @@ const NAV_ITEMS = [
   { to: '/devices', label: 'Devices', Icon: IconBus },
   { to: '/tracking', label: 'Live tracking', Icon: IconMapPin },
   { to: '/history', label: 'History', Icon: IconClock },
-  { to: '/notifications', label: 'Alerts', Icon: IconBell },
   { to: '/analytics', label: 'Analytics', Icon: IconBarChart, adminOnly: true },
   { to: '/route-center', label: 'Route Center', Icon: IconMap, adminOnly: true },
   { to: '/admin', label: 'Admin', Icon: IconShield, adminOnly: true },
   { to: '/settings', label: 'Settings', Icon: IconSettings },
-  { to: '/profile', label: 'Profile', Icon: IconUser },
 ];
 
 const lightTokens = {

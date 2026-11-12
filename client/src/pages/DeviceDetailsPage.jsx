@@ -1,5 +1,5 @@
 // client/src/pages/DeviceDetailsPage.jsx
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useDeviceDetails } from '../features/devices/hooks/useDeviceDetails';
 import { useDeviceSchedule } from '../features/devices/hooks/useDeviceSchedule';
 import MiniTimeline from '../features/devices/components/MiniTimeline';
@@ -55,9 +55,10 @@ const darkTokens = {
 export default function DeviceDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
-  const isAdmin = useAuth().user?.role === 'admin';
+  const { isGuest, isAdmin } = useAuth();
 
   const { device, recentPings, notifications, isLoading, error } = useDeviceDetails(id);
   const { stops: scheduleStops, isLoading: scheduleLoading } = useDeviceSchedule(device?._id);
@@ -86,7 +87,10 @@ export default function DeviceDetailsPage() {
 
   const lastPing = recentPings[recentPings.length - 1];
   const isOnline = device.status === 'online';
-  const deviceNotifications = notifications.filter((n) => n.message?.includes(device.name));
+  // Notifications are personal: guests never see them
+  const deviceNotifications = isGuest
+    ? []
+    : (notifications || []).filter((n) => n.message?.includes(device.name));
 
   return (
     <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="flex-1 w-full p-4 sm:p-6 lg:p-8">
@@ -188,27 +192,27 @@ export default function DeviceDetailsPage() {
               Full history
             </Link>
             {device.routeId ? (
-  <Link
-    to={`/routes/${device.routeId}`}
-    className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
-              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-    View Route
-  </Link>
-) : (
-  <span className="rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-2 text-xs font-medium text-gray-400 cursor-not-allowed">
-    No route assigned
-  </span>
-)}
-{isAdmin && (
-  <Link
-    to="/devices"
-    className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
-              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-    Manage Device
-  </Link>
-)}
+              <Link
+                to={`/routes/${device.routeId}`}
+                className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+                style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              >
+                View Route
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-2 text-xs font-medium text-gray-400 cursor-not-allowed">
+                No route assigned
+              </span>
+            )}
+            {isAdmin && (
+              <Link
+                to="/devices"
+                className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+                style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              >
+                Manage Device
+              </Link>
+            )}
           </div>
         </div>
         <DelayNoteCard deviceId={device._id} />
@@ -235,7 +239,21 @@ export default function DeviceDetailsPage() {
             <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 mb-4" style={{ color: 'var(--text-muted)' }}>
               <IconBell size={15} /> Recent notifications
             </h2>
-            {deviceNotifications.length === 0 ? (
+            {isGuest ? (
+              <div className="text-center py-8">
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Notifications are saved to your account.
+                </p>
+                <Link
+                  to="/login"
+                  state={{ from: location }}
+                  className="inline-block mt-3 rounded-xl px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: 'var(--accent-primary)' }}
+                >
+                  Sign in
+                </Link>
+              </div>
+            ) : deviceNotifications.length === 0 ? (
               <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
                 No notifications for this device yet.
               </p>

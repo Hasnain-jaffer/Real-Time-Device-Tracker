@@ -8,6 +8,7 @@ export async function listMyDevices(req, res, next) {
     // credential, so only admins get it.
     const query = Device.find().sort({ createdAt: -1 });
     if (req.user.role === 'admin') query.select('+deviceKey');
+    else query.select('-imei -ownerId');
     const devices = await query;
     res.json({ devices });
   } catch (err) {
@@ -40,6 +41,7 @@ export async function getDevice(req, res, next) {
   try {
     const query = Device.findById(req.params.id);
     if (req.user.role === 'admin') query.select('+deviceKey');
+    else query.select('-imei -ownerId');
     const device = await query;
     if (!device) return res.status(404).json({ message: 'Device not found' });
     res.json({ device });
@@ -132,8 +134,9 @@ export async function getNearbyDevices(req, res, next) {
       return res.status(400).json({ message: 'lat and lng are required' });
     }
 
-    const onlineDevices = await Device.find({ status: 'online', 'lastLocation.latitude': { $ne: null } });
-
+    const onlineDevices = await Device.find({ status: 'online', 'lastLocation.latitude': { $ne: null } })
+      .select('-imei -ownerId');
+      
     const withDistance = onlineDevices
       .map((d) => ({
         ...d.toObject(),

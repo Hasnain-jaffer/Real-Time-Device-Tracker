@@ -1,8 +1,10 @@
 // client/src/pages/DeviceHistoryPage.jsx
 import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import apiClient from '../lib/apiClient';
+import * as deviceApi from '../features/devices/api/deviceApi';
 import { useRoutePlayback } from '../features/history/hooks/useRoutePlayback';
 import PlaybackControls from '../features/history/components/PlaybackControls';
 import { useTheme } from '../app/ThemeContext';
@@ -116,6 +118,10 @@ export default function DeviceHistoryPage() {
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
   const isDark = theme === 'dark';
 
+  // /history?device=<busId> opens that bus directly (used by the "Full history" button)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedDevice = searchParams.get('device');
+
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState('');
   const [pings, setPings] = useState([]);
@@ -133,21 +139,37 @@ export default function DeviceHistoryPage() {
     [tokens]
   );
 
+  // Registered buses, so the picker shows real bus names
   useEffect(() => {
-    apiClient.get('/history/devices').then(({ data }) => {
-      setDevices(data.devices);
-      if (data.devices.length > 0) setSelectedDevice(data.devices[0]._id);
-    });
+    deviceApi
+      .listDevices()
+      .then((list) => {
+        setDevices(list);
+        const wanted = list.find((d) => d._id === requestedDevice);
+        setSelectedDevice((wanted || list[0])?._id || '');
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!selectedDevice) return;
+    if (!selectedDevice) {
+      setPings([]);
+      return undefined;
+    }
+    let alive = true;
     setIsLoading(true);
     apiClient
-      .get(`/history/${selectedDevice}`)
-      .then(({ data }) => setPings(data.pings))
-      .finally(() => setIsLoading(false));
+      .get(`/history/device/${selectedDevice}`)
+      .then(({ data }) => alive && setPings(data.pings || []))
+      .catch(() => alive && setPings([]))
+      .finally(() => alive && setIsLoading(false));
+    return () => { alive = false; };
   }, [selectedDevice]);
+
+  function handleSelect(id) {
+    setSelectedDevice(id);
+    setSearchParams(id ? { device: id } : {}, { replace: true });
+  }
 
   const path = pings.map((p) => [p.latitude, p.longitude]);
 
@@ -185,18 +207,26 @@ export default function DeviceHistoryPage() {
             </h1>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-secondary)' }}>
               {selectedDeviceMeta
-                ? `Device ${selectedDeviceMeta._id.slice(0, 6)} — last seen ${new Date(selectedDeviceMeta.lastSeen).toLocaleTimeString()}`
-                : 'No device selected'}
+                ? selectedDeviceMeta.lastSeenAt
+                  ? `${selectedDeviceMeta.name} — last seen ${new Date(selectedDeviceMeta.lastSeenAt).toLocaleString([], {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}`
+                  : `${selectedDeviceMeta.name} — not seen yet`
+                : 'No bus selected'}
             </p>
           </div>
 
-          <div className="relative">
-            <label htmlFor="device-select" className="sr-only">Select device</label>
+          {/* The wrapper and the select share the same width, so the arrow sits inside the box */}
+          <div className="relative w-full lg:w-auto">
+            <label htmlFor="device-select" className="sr-only">Select bus</label>
             <select
               id="device-select"
               value={selectedDevice}
-              onChange={(e) => setSelectedDevice(e.target.value)}
-              className="appearance-none rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-[1.5px] transition-all cursor-pointer"
+              onChange={(e) => handleSelect(e.target.value)}
+              className="appearance-none w-full lg:min-w-[280px] rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-[1.5px] transition-all cursor-pointer"
               style={{
                 backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border)',
@@ -204,10 +234,10 @@ export default function DeviceHistoryPage() {
                 '--tw-ring-color': 'var(--accent-primary)',
               }}
             >
-              {devices.length === 0 && <option value="">No devices yet</option>}
+              {devices.length === 0 && <option value="">No buses yet</option>}
               {devices.map((d) => (
                 <option key={d._id} value={d._id}>
-                  Device {d._id.slice(0, 6)} — last seen {new Date(d.lastSeen).toLocaleTimeString()}
+                  {d.name}{d.identifier ? ` · ${d.identifier}` : ''}
                 </option>
               ))}
             </select>
@@ -293,12 +323,12 @@ export default function DeviceHistoryPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No location history</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>This device hasn't recorded any points yet.</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>This bus hasn't recorded any points yet.</p>
                 </div>
               </div>
             ) : (
               <>
-                <MapContainer center={path[path.length - 1]} zoom={15} style={{ width: '100%', height: '100%' }} attributionControl={false}>
+                <MapContainer key={selectedDevice} center={path[path.length - 1]} zoom={15} style={{ width: '100%', height: '100%' }} attributionControl={false}>
                   <TileLayer url={tileUrl} />
                   <Polyline positions={path} pathOptions={{ color: tokens['--accent-primary'], weight: 4 }} />
                   {playbackPosition && (

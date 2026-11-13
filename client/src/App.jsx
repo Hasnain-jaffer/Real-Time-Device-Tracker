@@ -158,7 +158,7 @@ export default function App() {
                 <Route path="/settings" element={<Protected gate={GATES.settings}><SettingsPage /></Protected>} />
 
                 {/* Admins only (also enforced on the server) */}
-                <Route path="/route-center" element={<Protected adminOnly><RouteCenterPage /></Protected>} />
+                <Route path="/route-center" element={<Protected allowGuest><RouteCenterPage /></Protected>} />
                 <Route path="/analytics" element={<Protected adminOnly><AnalyticsPage /></Protected>} />
                 <Route path="/admin" element={<Protected adminOnly><AdminPage /></Protected>} />
 

@@ -58,17 +58,24 @@ function formatMinutes(total) {
   return `${Math.floor(total / 60)} h ${total % 60} min`;
 }
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ route, navigation }) {
   const { colors, isDark } = useTheme();
   const { buses } = useLiveBuses();
 
-  const [selectedId, setSelectedId] = useState(null);
-  const [pings, setPings] = useState([]);
+  const [selectedId, setSelectedId] = useState(route?.params?.busId ?? null);  const [pings, setPings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const requestId = useRef(0);
+
+  // Opened from a bus page ("Full history"): show that bus
+  useEffect(() => {
+    const requested = route?.params?.busId;
+    if (!requested) return;
+    setSelectedId(requested);
+    navigation.setParams({ busId: undefined });
+  }, [route?.params?.busId]);
 
   const pb = useRoutePlayback(pings);
 

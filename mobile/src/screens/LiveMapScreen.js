@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Linking, ScrollView } from 'react-native';
 import LeafletMap from '../components/LeafletMap';
+import TrackerControl from '../components/TrackerControl';
 import { useLiveBuses } from '../context/LiveBusesContext';
 import { useUserLocation } from '../context/LocationContext';
 import { useSocket } from '../context/SocketContext';
@@ -182,6 +183,7 @@ export default function LiveMapScreen({ route, navigation }) {
             })}
           </ScrollView>
         )}
+        <TrackerControl />
 
         {/* Compact Selected Bus Card */}
         <View style={[overlay, { padding: 12 }]}>

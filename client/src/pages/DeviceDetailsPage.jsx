@@ -178,14 +178,14 @@ export default function DeviceDetailsPage() {
 
           <div className="flex flex-wrap gap-2 mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
             <Link
-              to="/tracking"
+              to={`/tracking?device=${device._id}`}
               className="rounded-xl px-4 py-2.5 text-xs font-bold text-white hover:opacity-90 transition-opacity"
               style={{ backgroundColor: 'var(--accent-primary)' }}
             >
               View on live map
             </Link>
             <Link
-              to="/history"
+              to={`/history?device=${device._id}`}
               className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
               style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             >
@@ -204,14 +204,15 @@ export default function DeviceDetailsPage() {
                 No route assigned
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => document.getElementById('route-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
-              style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              Schedule
-            </button>
+            {device.routeId && (
+              <Link
+                to={`/routes/${device.routeId}?bus=${device._id}&view=schedule`}
+                className="rounded-xl px-4 py-2.5 text-xs font-bold hover:bg-black/[0.03] transition-colors"
+                style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              >
+                Schedule
+              </Link>
+            )}
             {isAdmin && (
               <Link
                 to="/devices"

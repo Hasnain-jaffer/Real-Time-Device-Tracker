@@ -1,11 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiClient from '../lib/apiClient';
 import { useTheme } from '../context/ThemeContext';
 import { useLiveBuses } from '../context/LiveBusesContext';
 import { useNotifications } from '../context/NotificationsContext';
-import { openLiveMap } from '../navigation/navigationRef';
+import { openLiveMap, goToTab } from '../navigation/navigationRef';
 import { timeAgo } from '../utils/geo';
 import { notificationMeta } from '../utils/notificationMeta';
 import { IconBus, IconSparkle, IconSignal, IconBattery, NotificationIcon } from '../components/Icons';
@@ -49,6 +49,8 @@ export default function BusDetailScreen({ route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [showData, setShowData] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const scrollRef = useRef(null);
+  const [scheduleY, setScheduleY] = useState(0);
 
   const load = useCallback(async () => {
     const [d, s, p, n] = await Promise.allSettled([
@@ -170,8 +172,27 @@ export default function BusDetailScreen({ route }) {
     { label: 'Battery level', text: BATTERY_LABELS[health.batteryLevel], level: health.batteryLevel, max: 6, Icon: IconBattery },
   ];
 
+  // Same four actions, in the same order, as the web device page
+  const actions = [
+    { key: 'map', label: 'View on live map', primary: true, disabled: !isLive || lat == null, onPress: () => openLiveMap(busId) },
+    { key: 'history', label: 'Full history', disabled: false, onPress: () => goToTab('History', { busId }) },
+    {
+      key: 'route',
+      label: routeId ? 'View route' : 'No route assigned',
+      disabled: !routeId,
+      onPress: () => navigation.navigate('RouteDetail', { routeId, routeName }),
+    },
+        {
+      key: 'schedule',
+      label: 'Schedule',
+      disabled: !routeId,
+      onPress: () => navigation.navigate('RouteDetail', { routeId, routeName, busId, focus: 'schedule' }),
+    },
+  ];
+
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: colors.bgPage }}
       contentContainerStyle={{ padding: 16 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
@@ -199,21 +220,26 @@ export default function BusDetailScreen({ route }) {
           ))}
         </View>
 
-        <View style={{ flexDirection: 'row', marginTop: 2 }}>
-          <TouchableOpacity
-            disabled={!isLive || lat == null}
-            onPress={() => openLiveMap(busId)}
-            style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginRight: 8, opacity: !isLive || lat == null ? 0.45 : 1 }}
-          >
-            <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 13.5 }}>View on live map</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            disabled={!routeId}
-            onPress={() => navigation.navigate('RouteDetail', { routeId, routeName })}
-            style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 11, alignItems: 'center', opacity: routeId ? 1 : 0.45 }}
-          >
-            <Text style={{ color: colors.textPrimary, fontWeight: '600', fontSize: 13.5 }}>{routeId ? 'View route' : 'No route assigned'}</Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4, marginTop: 2 }}>
+          {actions.map((a) => (
+            <View key={a.key} style={{ width: '50%', padding: 4 }}>
+              <TouchableOpacity
+                disabled={a.disabled}
+                onPress={a.onPress}
+                style={{
+                  borderRadius: 12,
+                  paddingVertical: 11,
+                  alignItems: 'center',
+                  opacity: a.disabled ? 0.45 : 1,
+                  ...(a.primary ? { backgroundColor: colors.accent } : { borderWidth: 1, borderColor: colors.border }),
+                }}
+              >
+                <Text style={{ color: a.primary ? '#FFFFFF' : colors.textPrimary, fontWeight: '600', fontSize: 13.5 }}>
+                  {a.label}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -246,7 +272,7 @@ export default function BusDetailScreen({ route }) {
         </View>
       )}
 
-      <View style={card}>
+      <View style={card} onLayout={(e) => setScheduleY(e.nativeEvent.layout.y)}>
         <Text style={cardTitle}>Route schedule</Text>
         <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: -6, marginBottom: 12 }}>Expected vs actual arrival at each stop today.</Text>
         {schedule === null ? (

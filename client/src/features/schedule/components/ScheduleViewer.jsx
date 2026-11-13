@@ -1,5 +1,6 @@
 // client/src/features/schedule/components/ScheduleViewer.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import * as scheduleApi from '../api/scheduleApi';
 
 function formatClock(hhmm) {
@@ -10,14 +11,27 @@ function formatClock(hhmm) {
 }
 
 export default function ScheduleViewer({ stops, buses }) {
+  const [searchParams] = useSearchParams();
+  const wantedBus = searchParams.get('bus');
+  const wantsSchedule = searchParams.get('view') === 'schedule';
+  const rootRef = useRef(null);
+
   const [busId, setBusId] = useState('');
   const [times, setTimes] = useState({}); // stopId -> 'HH:mm'
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (buses.length > 0 && !buses.some((b) => b._id === busId)) setBusId(buses[0]._id);
-  }, [buses, busId]);
+    if (buses.length > 0 && !buses.some((b) => b._id === busId)) {
+      setBusId((buses.find((b) => b._id === wantedBus) || buses[0])._id);
+    }
+  }, [buses, busId, wantedBus]);
+
+  useEffect(() => {
+    if (!wantsSchedule) return undefined;
+    const timer = setTimeout(() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+    return () => clearTimeout(timer);
+  }, [wantsSchedule]);
 
   useEffect(() => {
     if (!busId) return undefined;
@@ -31,9 +45,11 @@ export default function ScheduleViewer({ stops, buses }) {
         const byStop = {};
         list.forEach((entry) => {
           const stopId = entry.geofenceId?._id || entry.geofenceId;
-          if (stopId) byStop[stopId] = entry.expectedTime;
+          if (!stopId) return;
+          const current = byStop[stopId];
+          if (!current || new Date(entry.updatedAt || 0) >= new Date(current.updatedAt || 0)) byStop[stopId] = entry;
         });
-        setTimes(byStop);
+        setTimes(Object.fromEntries(Object.entries(byStop).map(([id, entry]) => [id, entry.expectedTime])));
       })
       .catch((err) => {
         if (!alive) return;
@@ -47,7 +63,11 @@ export default function ScheduleViewer({ stops, buses }) {
   const hasAnyTime = stops.some((s) => times[s._id]);
 
   return (
-    <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div
+      ref={rootRef}
+      className="scroll-mt-24 rounded-2xl p-5"
+      style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Bus schedule</h2>
         {buses.length > 1 && (

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import * as routeApi from '../features/routes/api/routeApi';
 import * as deviceApi from '../features/devices/api/deviceApi';
 import { useTheme } from '../app/ThemeContext';
+import { useAuth } from '../app/AuthContext';
 import { useToast } from '../app/ToastContext';
 
 /* ─── SVG Icons ─── */
@@ -51,6 +52,7 @@ const cardShadow = '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)';
 
 export default function RouteCenterPage() {
   const { theme } = useTheme();
+  const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const tokens = theme === 'dark' ? darkTokens : lightTokens;
 
@@ -58,11 +60,14 @@ export default function RouteCenterPage() {
   const [devices, setDevices] = useState([]);
   const [newName, setNewName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   function refresh() {
     setIsLoading(true);
+    setLoadError('');
     Promise.all([routeApi.listRoutes(), deviceApi.listDevices()])
       .then(([r, d]) => { setRoutes(r); setDevices(d); })
+      .catch((err) => setLoadError(err.response?.data?.message || 'Could not load routes. Please try again.'))
       .finally(() => setIsLoading(false));
   }
 
@@ -71,63 +76,93 @@ export default function RouteCenterPage() {
   async function handleCreate(e) {
     e.preventDefault();
     if (!newName.trim()) return;
-    await routeApi.createRoute({ name: newName });
-    setNewName('');
-    showToast('Route created', 'success');
-    refresh();
+    try {
+      await routeApi.createRoute({ name: newName });
+      setNewName('');
+      showToast('Route created', 'success');
+      refresh();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Could not create the route', 'error');
+    }
   }
 
   async function handleDelete(id) {
     if (!window.confirm('Delete this route? Its stops will also be removed.')) return;
-    await routeApi.deleteRoute(id);
-    showToast('Route deleted', 'success');
-    refresh();
+    try {
+      await routeApi.deleteRoute(id);
+      showToast('Route deleted', 'success');
+      refresh();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Could not delete the route', 'error');
+    }
   }
 
   async function handleAssign(deviceId, routeId) {
-    await routeApi.assignBusToRoute(deviceId, routeId || null);
-    showToast('Bus assignment updated', 'success');
-    refresh();
+    try {
+      await routeApi.assignBusToRoute(deviceId, routeId || null);
+      showToast('Bus assignment updated', 'success');
+      refresh();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Could not update the assignment', 'error');
+    }
   }
 
   return (
     <div style={{ ...tokens, backgroundColor: 'var(--bg-page)' }} className="min-h-[calc(100vh-64px)] p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-[19px] font-semibold" style={{ color: 'var(--text-primary)' }}>Route Center</h1>
+          <h1 className="text-[19px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+            {isAdmin ? 'Route Center' : 'Routes'}
+          </h1>
           <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-            Create routes and assign buses to them.
+            {isAdmin ? 'Create routes and assign buses to them.' : 'Browse campus routes, their stops and the buses that run them.'}
           </p>
         </div>
 
-        <form onSubmit={handleCreate} className="flex gap-2">
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="New route name (e.g. Route 4A)"
-            className="flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all"
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              '--tw-ring-color': 'var(--accent-primary)',
-            }}
-          />
-          <button
-            type="submit"
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: 'var(--accent-primary)', boxShadow: cardShadow }}
-          >
-            <IconPlus size={15} />
-            Create Route
-          </button>
-        </form>
+        {isAdmin && (
+          <form onSubmit={handleCreate} className="flex gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="New route name (e.g. Route 4A)"
+              className="flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-all"
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                '--tw-ring-color': 'var(--accent-primary)',
+              }}
+            />
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: 'var(--accent-primary)', boxShadow: cardShadow }}
+            >
+              <IconPlus size={15} />
+              Create Route
+            </button>
+          </form>
+        )}
 
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
               <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--bg-surface)' }} />
             ))}
+          </div>
+        ) : loadError ? (
+          <div
+            className="rounded-2xl p-6 text-center"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: cardShadow }}
+          >
+            <p className="text-sm font-medium" style={{ color: 'var(--accent-critical)' }}>{loadError}</p>
+            <button
+              onClick={refresh}
+              className="mt-3 rounded-xl px-4 py-2 text-xs font-bold text-white"
+              style={{ backgroundColor: 'var(--accent-primary)' }}
+            >
+              Try again
+            </button>
           </div>
         ) : routes.length === 0 ? (
           <div
@@ -142,7 +177,9 @@ export default function RouteCenterPage() {
             </div>
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>No routes yet</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Create one above to get started.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                {isAdmin ? 'Create one above to get started.' : 'Routes will appear here once they are added.'}
+              </p>
             </div>
           </div>
         ) : (
@@ -169,14 +206,16 @@ export default function RouteCenterPage() {
                       </span>
                       {route.name}
                     </Link>
-                    <button
-                      onClick={() => handleDelete(route._id)}
-                      className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg transition hover:opacity-80"
-                      style={{ color: 'var(--accent-critical)', backgroundColor: 'var(--accent-critical)' + '10' }}
-                    >
-                      <IconTrash size={12} />
-                      Delete
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(route._id)}
+                        className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg transition hover:opacity-80"
+                        style={{ color: 'var(--accent-critical)', backgroundColor: 'var(--accent-critical)' + '10' }}
+                      >
+                        <IconTrash size={12} />
+                        Delete
+                      </button>
+                    )}
                   </div>
 
                   <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
@@ -184,28 +223,48 @@ export default function RouteCenterPage() {
                   </p>
 
                   <div className="flex flex-wrap gap-2">
-                    {devices.map((d) => {
-                      const isAssignedHere = d.routeId === route._id;
-                      return (
-                        <button
-                          key={d._id}
-                          onClick={() => handleAssign(d._id, isAssignedHere ? null : route._id)}
-                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition hover:opacity-90 active:scale-[0.97]"
-                          style={
-                            isAssignedHere
-                              ? { backgroundColor: 'var(--accent-primary)', color: '#fff' }
-                              : {
-                                  backgroundColor: 'var(--bg-page)',
-                                  border: '1px solid var(--border)',
-                                  color: 'var(--text-secondary)',
-                                }
-                          }
-                        >
-                          <IconBus size={13} />
-                          {d.name}
-                        </button>
-                      );
-                    })}
+                    {isAdmin
+                      ? devices.map((d) => {
+                          const isAssignedHere = d.routeId === route._id;
+                          return (
+                            <button
+                              key={d._id}
+                              onClick={() => handleAssign(d._id, isAssignedHere ? null : route._id)}
+                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition hover:opacity-90 active:scale-[0.97]"
+                              style={
+                                isAssignedHere
+                                  ? { backgroundColor: 'var(--accent-primary)', color: '#fff' }
+                                  : {
+                                      backgroundColor: 'var(--bg-page)',
+                                      border: '1px solid var(--border)',
+                                      color: 'var(--text-secondary)',
+                                    }
+                              }
+                            >
+                              <IconBus size={13} />
+                              {d.name}
+                            </button>
+                          );
+                        })
+                      : assignedBuses.map((d) => (
+                          <Link
+                            key={d._id}
+                            to={`/devices/${d._id}`}
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition hover:opacity-90"
+                            style={{
+                              backgroundColor: d.status === 'online' ? 'var(--accent-primary)' + '1A' : 'var(--bg-page)',
+                              border: '1px solid var(--border)',
+                              color: d.status === 'online' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                            }}
+                          >
+                            <IconBus size={13} />
+                            {d.name}
+                            {d.status === 'online' && <span className="text-[10px] font-bold">Live</span>}
+                          </Link>
+                        ))}
+                    {!isAdmin && assignedBuses.length === 0 && (
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>No bus is assigned yet.</span>
+                    )}
                   </div>
                 </div>
               );

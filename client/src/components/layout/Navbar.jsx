@@ -126,9 +126,9 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', Icon: IconDashboard },
   { to: '/devices', label: 'Devices', Icon: IconBus },
   { to: '/tracking', label: 'Live tracking', Icon: IconMapPin },
-  { to: '/history', label: 'History', Icon: IconClock },
+  { to: '/history', label: 'History', Icon: IconClock },    
+  { to: '/route-center', label: 'Routes', Icon: IconMap },
   { to: '/analytics', label: 'Analytics', Icon: IconBarChart, adminOnly: true },
-  { to: '/route-center', label: 'Route Center', Icon: IconMap, adminOnly: true },
   { to: '/admin', label: 'Admin', Icon: IconShield, adminOnly: true },
   { to: '/settings', label: 'Settings', Icon: IconSettings },
 ];

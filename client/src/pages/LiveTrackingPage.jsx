@@ -1,6 +1,6 @@
 // client/src/pages/LiveTrackingPage.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTrackedDevices } from '../features/tracking/hooks/useTrackedDevices';
@@ -139,8 +139,12 @@ export default function LiveTrackingPage() {
   const navigate = useNavigate();
   const { position: userPosition } = useUserLocation();
 
-  const [selectedKey, setSelectedKey] = useState(null);
-  const [hiddenIds, setHiddenIds] = useState(new Set());
+  const [searchParams] = useSearchParams();
+  const requestedDevice = searchParams.get('device');
+  const [selectedKey, setSelectedKey] = useState(requestedDevice);
+  useEffect(() => {
+    if (requestedDevice) setSelectedKey(requestedDevice);
+  }, [requestedDevice]);  const [hiddenIds, setHiddenIds] = useState(new Set());
   const [query, setQuery] = useState('');
   const [mapLayer, setMapLayer] = useState('normal'); // 'normal' | 'satellite' | 'dark'
 

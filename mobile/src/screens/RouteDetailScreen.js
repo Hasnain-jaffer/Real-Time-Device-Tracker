@@ -1,9 +1,10 @@
 // mobile/src/screens/RouteDetailScreen.js
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiClient from '../lib/apiClient';
 import LeafletMap from '../components/LeafletMap';
+import ScheduleCard from '../components/ScheduleCard';
 import { useTheme } from '../context/ThemeContext';
 import { useLiveBuses } from '../context/LiveBusesContext';
 import { useUserLocation } from '../context/LocationContext';
@@ -12,7 +13,7 @@ import { IconBus } from '../components/Icons';
 import { openLiveMap } from '../navigation/navigationRef';
 
 export default function RouteDetailScreen({ route }) {
-  const { routeId } = route.params;
+  const { routeId, busId: focusBusId } = route.params;
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
   const { buses, liveBuses } = useLiveBuses();
@@ -23,6 +24,26 @@ export default function RouteDetailScreen({ route }) {
   const [eta, setEta] = useState(null);
   const [now, setNow] = useState(Date.now());
   const [refreshing, setRefreshing] = useState(false);
+
+  const scrollRef = useRef(null);
+  const [scheduleY, setScheduleY] = useState(null);
+  const [pendingFocus, setPendingFocus] = useState(route.params?.focus === 'schedule');
+
+  // Arriving from a bus page's Schedule button: remember to scroll once the layout is known
+  useEffect(() => {
+    if (route.params?.focus === 'schedule') {
+      setPendingFocus(true);
+      navigation.setParams({ focus: undefined });
+    }
+  }, [route.params?.focus]);
+
+  // Re-scrolls for a moment, because the timeline above grows as ETAs arrive
+  useEffect(() => {
+    if (!pendingFocus || scheduleY == null) return undefined;
+    scrollRef.current?.scrollTo({ y: Math.max(0, scheduleY - 8), animated: true });
+    const timer = setTimeout(() => setPendingFocus(false), 1200);
+    return () => clearTimeout(timer);
+  }, [pendingFocus, scheduleY]);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -71,6 +92,10 @@ export default function RouteDetailScreen({ route }) {
   );
   const routeBuses = buses.filter((b) => b.routeId === routeId);
   const liveHere = liveBuses.filter((b) => b.routeId === routeId);
+  // The bus we came from goes first
+  const scheduleBuses = routeBuses
+    .slice()
+    .sort((a, b) => (a.id === focusBusId ? -1 : b.id === focusBusId ? 1 : 0));
 
   function soonestEta(stopId) {
     let best = null;
@@ -106,6 +131,7 @@ export default function RouteDetailScreen({ route }) {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: colors.bgPage }}
       contentContainerStyle={{ padding: 16 }}
       nestedScrollEnabled
@@ -124,7 +150,8 @@ export default function RouteDetailScreen({ route }) {
             user={position}
             isDark={isDark}
             stops={mapStops}
-            onSelect={(id) => openLiveMap(id)}          />
+            onSelect={(id) => openLiveMap(id)}
+          />
         </View>
       )}
 
@@ -207,6 +234,23 @@ export default function RouteDetailScreen({ route }) {
               </View>
             );
           })
+        )}
+      </View>
+
+      <View style={{ marginTop: 14 }} onLayout={(e) => setScheduleY(e.nativeEvent.layout.y)}>
+        {scheduleBuses.length === 0 ? (
+          <View style={[card, { padding: 16 }]}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>Schedule</Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 6 }}>No bus is assigned to this route yet.</Text>
+          </View>
+        ) : (
+          scheduleBuses.map((b) => (
+            <ScheduleCard
+              key={b.id}
+              busId={b.id}
+              title={scheduleBuses.length > 1 ? `Schedule · ${b.name}` : 'Schedule'}
+            />
+          ))
         )}
       </View>
     </ScrollView>

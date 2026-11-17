@@ -6,18 +6,23 @@ import 'dotenv/config';
 import net from 'net';
 import axios from 'axios';
 import { io as ioClient } from 'socket.io-client';
+import crypto from 'crypto';
 import { extractPackets, parsePacket, buildAck, hasValidCrc } from './gt06Parser.js';
 
 const SERVER_URL = (process.env.SERVER_URL || '').replace(/\/+$/, '');
 const BRIDGE_SECRET = process.env.BRIDGE_SECRET;
 const TCP_PORT = Number(process.env.TCP_PORT) || 5023;
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // drop connections that went silent
+const IDLE_TIMEOUT_MS = Number(process.env.IDLE_TIMEOUT_MS) || 10 * 60 * 1000;
+const LOG_RAW = process.env.LOG_RAW === 'true'; // log the raw hex of every chunk (first real test only)
+const LOOKUP_PATH = process.env.LOOKUP_PATH || '/api/bridge/devices/by-imei'; // the path your current bridge already uses
 const MAX_BUFFER = 4096;
 
 if (!SERVER_URL || !BRIDGE_SECRET) {
   console.error('[bridge] SERVER_URL and BRIDGE_SECRET must be set in .env');
   process.exit(1);
 }
+
+console.log(`[bridge] BRIDGE_SECRET: ${BRIDGE_SECRET.length} chars, id ${crypto.createHash('sha256').update(BRIDGE_SECRET).digest('hex').slice(0, 8)}`);
 
 const connections = new Map(); // imei -> live connection (one link per tracker)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,7 +42,8 @@ async function connectTracker(conn, imei) {
   // up (Render free tier), or an admin may register this IMEI a minute from now.
   for (let attempt = 1; !conn.closed && conn.imei === imei; attempt++) {
     try {
-      const { data } = await axios.get(`${SERVER_URL}/api/bridge/device-by-imei/${imei}`, {
+      console.log(`[bridge] Attempting to connect IMEI ${imei} (attempt ${attempt})`);
+      const { data } = await axios.get(`${SERVER_URL}${LOOKUP_PATH}/${imei}`, {
         headers: { 'x-bridge-secret': BRIDGE_SECRET },
         timeout: 70000,
       });
@@ -144,6 +150,7 @@ function handlePacket(conn, packet) {
   if (parsed.type === 'login') onLogin(conn, parsed.data.imei);
   else if (parsed.type === 'status') onStatus(conn, parsed.data);
   else if (parsed.type === 'location') onLocation(conn, parsed.data);
+  else if (parsed.type === 'heartbeat') { if (conn.io?.connected) conn.io.emit('device-heartbeat'); }  
   else {
     logThrottled(
       `unknown-${parsed.protocol}`,
@@ -167,6 +174,9 @@ const server = net.createServer((tcp) => {
   });
 
   tcp.on('data', (chunk) => {
+    if (LOG_RAW) {
+      console.log(`[bridge][data] ${chunk.toString('hex')}`);
+    }
     buffer = Buffer.concat([buffer, chunk]);
     const { packets, remainder } = extractPackets(buffer);
     buffer = remainder.length > MAX_BUFFER ? Buffer.alloc(0) : remainder;

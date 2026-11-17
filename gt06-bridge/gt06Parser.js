@@ -16,6 +16,7 @@ export const PROTOCOL = {
   ALARM: 0x16, // location + alarm
   GPS_LBS_2: 0x22, // location (GT06N / newer firmware)
   ALARM_2: 0x26, // location + alarm (newer firmware)
+  HEARTBEAT_2: 0x23, // heartbeat on some models (no battery/GSM decoding)
 };
 
 const LOCATION_PROTOCOLS = new Set([
@@ -24,7 +25,7 @@ const LOCATION_PROTOCOLS = new Set([
   PROTOCOL.ALARM,
   PROTOCOL.ALARM_2,
 ]);
-const ACK_PROTOCOLS = new Set([PROTOCOL.LOGIN, PROTOCOL.STATUS, PROTOCOL.ALARM, PROTOCOL.ALARM_2]);
+const ACK_PROTOCOLS = new Set([PROTOCOL.LOGIN, PROTOCOL.STATUS, PROTOCOL.HEARTBEAT_2, PROTOCOL.ALARM, PROTOCOL.ALARM_2]);
 
 const MAX_FRAME = 2048;
 
@@ -145,6 +146,7 @@ export function parsePacket(packet) {
   if (isLong) return { ...base, type: 'unknown' };
   if (protocol === PROTOCOL.LOGIN) return { ...base, type: 'login', data: parseLogin(content) };
   if (protocol === PROTOCOL.STATUS) return { ...base, type: 'status', data: parseStatus(content) };
+  if (protocol === PROTOCOL.HEARTBEAT_2) return { ...base, type: 'heartbeat' };
   if (LOCATION_PROTOCOLS.has(protocol)) return { ...base, type: 'location', data: parseLocation(content) };
   return { ...base, type: 'unknown' };
 }

@@ -4,25 +4,14 @@ import Device from '../models/device.model.js';
 const IMEI_PATTERN = /^\d{15}$/;
 
 // '' clears the IMEI (null), undefined means "not provided", anything else must be 15 digits
-function parseImei(value) {
-  if (value === undefined) return undefined;
-  const cleaned = String(value ?? '').replace(/\s+/g, '');
-  if (cleaned === '') return null;
-  if (!IMEI_PATTERN.test(cleaned)) {
-    const err = new Error('IMEI must be exactly 15 digits (printed on the tracker or its box)');
-    err.status = 400;
-    throw err;
-  }
-  return cleaned;
+function parseImei(raw) {
+  if (raw === undefined) return { value: undefined };
+  const cleaned = String(raw ?? '').replace(/\s+/g, '');
+  if (cleaned === '') return { value: null };
+  if (!/^\d{15}$/.test(cleaned)) return { error: 'IMEI must be exactly 15 digits (printed on the tracker or its box)' };
+  return { value: cleaned };
 }
 
-function handleDuplicateImei(err, res) {
-  if (err?.code === 11000) {
-    res.status(409).json({ message: 'That IMEI is already assigned to another bus' });
-    return true;
-  }
-  return false;
-}
 
 export async function listMyDevices(req, res, next) {
   try {
@@ -158,20 +147,6 @@ export async function getNearbyDevices(req, res, next) {
       .slice(0, Number(limit));
 
     res.json({ devices: withDistance });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function getDeviceByImei(req, res, next) {
-  try {
-    const imei = String(req.params.imei || '').trim();
-    if (!/^\d{15,16}$/.test(imei)) return res.status(400).json({ message: 'Invalid IMEI' });
-    // Also accept the old 16-digit form ("0" + IMEI) that test devices were saved with
-    const candidates = imei.length === 15 ? [imei, `0${imei}`] : [imei];
-    const device = await Device.findOne({ imei: { $in: candidates } }).select('deviceKey name imei');
-    if (!device) return res.status(404).json({ message: 'No device registered with this IMEI' });
-    res.json({ device });
   } catch (err) {
     next(err);
   }

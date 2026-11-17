@@ -19,7 +19,7 @@ const args = Object.fromEntries(
   })
 );
 const HOST = args.host || 'localhost';
-const PORT = Number(args.port) || 5023;
+const PORT = Number(args.port) || 5024;
 const IMEI = String(args.imei || '123456789012345');
 const SPEED_KMH = Number(args.speed) || 60;
 const INTERVAL_S = Number(args.interval) || 3;

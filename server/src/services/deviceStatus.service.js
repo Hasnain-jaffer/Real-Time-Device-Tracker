@@ -16,8 +16,8 @@ export async function markDeviceOffline({ deviceId, io }) {
   // Removes the bus from the live map
   io.emit('user-disconnected', { id: `offline-${device._id}`, deviceId: device._id.toString() });
 
-  const wasInsideStop = device.insideGeofenceIds.length > 0;
-  await broadcastNotification(io, {
+  const wasInsideStop = (device.insideGeofenceIds || []).length > 0;
+    await broadcastNotification(io, {
     type: 'device-offline',
     title: `${device.name} went offline`,
     message: wasInsideStop

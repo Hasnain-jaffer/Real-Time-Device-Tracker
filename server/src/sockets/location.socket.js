@@ -182,7 +182,8 @@ export function registerLocationHandlers(io) {
     });
 
         // Tracker status report (battery + GSM signal), forwarded by the GT06 bridge
-    socket.on('device-health', (data) => {
+    socket.on('device-health', async (data) => {
+      await ready;
       if (!socket.deviceId) return;
       const gsm = Number(data?.gsmSignal);
       const battery = Number(data?.batteryLevel);

@@ -181,6 +181,17 @@ export function registerLocationHandlers(io) {
       Device.findByIdAndUpdate(socket.deviceId, { lastSeenAt: new Date(), status: 'online' }).catch(() => {});
     });
 
+        // Tracker status report (battery + GSM signal), forwarded by the GT06 bridge
+    socket.on('device-health', (data) => {
+      if (!socket.deviceId) return;
+      const gsm = Number(data?.gsmSignal);
+      const battery = Number(data?.batteryLevel);
+      const set = { lastSeenAt: new Date(), status: 'online', 'health.updatedAt': new Date() };
+      if (Number.isInteger(gsm) && gsm >= 0 && gsm <= 4) set['health.gsmSignal'] = gsm;
+      if (Number.isInteger(battery) && battery >= 0 && battery <= 6) set['health.batteryLevel'] = battery;
+      Device.findByIdAndUpdate(socket.deviceId, { $set: set }).catch(() => {});
+    });
+
     // --- Disconnect ---
     socket.on('disconnect', async () => {
       await ready;

@@ -23,7 +23,6 @@ import analyticsRoutes from './src/routes/analytics.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
 import searchRoutes from './src/routes/search.routes.js';
 import scheduleRoutes from './src/routes/schedule.routes.js';
-import { startGt06Server } from './src/tcp/gt06Server.js';
 import routeRoutes from './src/routes/route.routes.js';
 import bridgeRoutes from './src/routes/bridge.routes.js'; 
 import aiRoutes from './src/routes/ai.routes.js';
@@ -101,8 +100,6 @@ async function start() {
     console.log(`Server running on port ${port} [${process.env.NODE_ENV}]`);
   });
 
-  const gt06Port = process.env.GT06_TCP_PORT || 5023;
-  startGt06Server({ port: gt06Port, io });
   startOfflineWatchdog(io);
 }
 

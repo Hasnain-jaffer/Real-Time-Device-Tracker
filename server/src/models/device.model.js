@@ -33,11 +33,9 @@ const deviceSchema = new mongoose.Schema(
       index: true,
       select: false, // never returned by default; admin endpoints request it with .select('+deviceKey')
     },
-    imei: {
-      type: String,
-      unique: true,
-      sparse: true, // allows many devices to have imei: null without violating uniqueness
-      index: true,
+    imei: { 
+      type: String, 
+      trim: true 
     },
     status: {
       type: String,
@@ -66,9 +64,19 @@ const deviceSchema = new mongoose.Schema(
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Geofence' }],
       default: [],
     },
+    health: {
+      gsmSignal: { type: Number, default: null },
+      batteryLevel: { type: Number, default: null },
+      updatedAt: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );
+
+// Unique only among buses that actually have an IMEI. (A plain unique+sparse index
+// treats "imei: null" as a value, so a second bus without an IMEI would be rejected.
+// If you ever hit a duplicate-key error registering a bus, that was the cause.)
+deviceSchema.index({ imei: 1 }, { unique: true, partialFilterExpression: { imei: { $type: 'string' } } });
 
 deviceSchema.statics.generateDeviceKey = function () {
   // e.g. "dev_9f2a1c7b3e4d5f6a8b0c1d2e3f4a5b6c" — prefixed for readability, opaque otherwise

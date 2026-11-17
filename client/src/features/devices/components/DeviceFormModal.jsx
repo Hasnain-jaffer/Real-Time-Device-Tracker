@@ -13,6 +13,7 @@ export default function DeviceFormModal({ isOpen, onClose, onSubmit, initialValu
   const [identifier, setIdentifier] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [imei, setImei] = useState('');
 
   const surface = tokens['--bg-surface'] || '#FFFFFF';
   const page = tokens['--bg-page'] || '#F4EFE6';
@@ -27,6 +28,7 @@ export default function DeviceFormModal({ isOpen, onClose, onSubmit, initialValu
     if (isOpen) {
       setName(initialValues?.name || '');
       setIdentifier(initialValues?.identifier || '');
+      setImei(initialValues?.imei || '');
       setError('');
     }
   }, [isOpen, initialValues]);
@@ -35,10 +37,14 @@ export default function DeviceFormModal({ isOpen, onClose, onSubmit, initialValu
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (imei && imei.length !== 15) {
+      setError('IMEI must be exactly 15 digits'); 
+    return; 
+  }
     setIsSubmitting(true);
     setError('');
     try {
-      await onSubmit({ name, identifier, type: 'bus' });
+      await onSubmit({ name, identifier, type: 'bus', imei });
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
@@ -109,6 +115,21 @@ export default function DeviceFormModal({ isOpen, onClose, onSubmit, initialValu
               placeholder="R4A"
               className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all"
               style={{ backgroundColor: page, border: `1px solid ${border}`, color: textPrimary, '--tw-ring-color': accent }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: textSecondary }} htmlFor="device-imei">
+              Tracker IMEI <span style={{ color: textMuted, fontWeight: 400 }}>(hardware trackers only)</span>
+            </label>
+            <input
+              id="device-imei"
+              value={imei}
+              onChange={(e) => setImei(e.target.value.replace(/\D/g, '').slice(0, 15))}
+              inputMode="numeric"
+              placeholder="15 digits, printed on the tracker"
+              className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none transition"
+              style={{ backgroundColor: page, border: `1px solid ${border}`, color: textPrimary }}
             />
           </div>
 

@@ -2,6 +2,10 @@
 const HEARTBEAT_WARN_MS = 15000;
 const HEARTBEAT_CRITICAL_MS = 60000;
 
+
+const SIGNAL_LABELS = ['No signal', 'Extremely weak', 'Very weak', 'Good', 'Strong'];
+const BATTERY_LABELS = ['No power', 'Extremely low', 'Very low', 'Low', 'Medium', 'High', 'Very high'];
+
 function getHeartbeatHealth(lastSeenAt) {
   if (!lastSeenAt) return { label: 'No data', tone: 'neutral' };
   const ms = Date.now() - new Date(lastSeenAt).getTime();
@@ -51,6 +55,8 @@ export default function DeviceHealthPanel({ device, tokens = {} }) {
   const badgeEtaBg = tokens['--badge-eta-bg'] || '#F6E9CE';
   const badgeEtaText = tokens['--badge-eta-text'] || '#8A6423';
   const critical = tokens['--accent-critical'] || '#B94A3A';
+
+  const toneColor = (ratio) => (ratio >= 0.5 ? badgeSuccessText : ratio >= 0.25 ? badgeEtaText : critical);
 
   const toneStyle = (tone) =>
     tone === 'success'
@@ -116,16 +122,34 @@ export default function DeviceHealthPanel({ device, tokens = {} }) {
         />
       </div>
 
-      <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${border}` }}>
-        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: textMuted }}>Coming soon</p>
+            <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${border}` }}>
+        <p className="text-xs font-medium mb-3" style={{ color: textMuted }}>Tracker hardware</p>
         <div className="grid grid-cols-2 gap-3">
-          {['Battery level', 'Signal strength', 'Firmware version', 'Storage'].map((label) => (
-            <div key={label} className="rounded-xl px-3 py-3 text-center" style={{ border: `1px dashed ${border}` }}>
-              <p className="text-[11px] font-medium" style={{ color: textMuted }}>{label}</p>
-              <p className="text-[10px] mt-1" style={{ color: textMuted, opacity: 0.6 }}>Requires hardware</p>
+          {[
+            { label: 'Signal strength', value: SIGNAL_LABELS[device.health?.gsmSignal], level: device.health?.gsmSignal, max: 4 },
+            { label: 'Battery level', value: BATTERY_LABELS[device.health?.batteryLevel], level: device.health?.batteryLevel, max: 6 },
+          ].map((item) => (
+            <div key={item.label} className="rounded-xl px-3 py-2.5" style={{ backgroundColor: page, border: `1px solid ${border}` }}>
+              <p className="text-xs" style={{ color: textMuted }}>{item.label}</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: item.value ? textPrimary : textMuted }}>
+                {item.value || 'No tracker data'}
+              </p>
+              {item.value && (
+                <div className="mt-1.5 h-1.5 rounded-full" style={{ backgroundColor: border }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${(item.level / item.max) * 100}%`, backgroundColor: toneColor(item.level / item.max) }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
+        {device.health?.updatedAt && (
+          <p className="text-xs mt-2" style={{ color: textMuted }}>
+            Reported by the tracker at {new Date(device.health.updatedAt).toLocaleTimeString()}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,29 @@
 // server/src/controllers/device.controller.js
 import Device from '../models/device.model.js';
 
+const IMEI_PATTERN = /^\d{15}$/;
+
+// '' clears the IMEI (null), undefined means "not provided", anything else must be 15 digits
+function parseImei(value) {
+  if (value === undefined) return undefined;
+  const cleaned = String(value ?? '').replace(/\s+/g, '');
+  if (cleaned === '') return null;
+  if (!IMEI_PATTERN.test(cleaned)) {
+    const err = new Error('IMEI must be exactly 15 digits (printed on the tracker or its box)');
+    err.status = 400;
+    throw err;
+  }
+  return cleaned;
+}
+
+function handleDuplicateImei(err, res) {
+  if (err?.code === 11000) {
+    res.status(409).json({ message: 'That IMEI is already assigned to another bus' });
+    return true;
+  }
+  return false;
+}
+
 export async function listMyDevices(req, res, next) {
   try {
     // Buses are admin-managed but visible to every authenticated user (students
@@ -19,9 +42,9 @@ export async function listMyDevices(req, res, next) {
 export async function createDevice(req, res, next) {
   try {
     const { name, identifier, type } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: 'Device name is required' });
-    }
+    if (!name) return res.status(400).json({ message: 'Device name is required' });
+    const imei = parseImei(req.body.imei);
+    if (imei.error) return res.status(400).json({ message: imei.error });
 
     const device = await Device.create({
       ownerId: req.user.id,
@@ -29,10 +52,11 @@ export async function createDevice(req, res, next) {
       identifier: identifier || '',
       type: type || 'bus',
       deviceKey: Device.generateDeviceKey(),
+      ...(imei.value ? { imei: imei.value } : {}),
     });
-
     res.status(201).json({ device });
   } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ message: 'That IMEI is already assigned to another bus' });
     next(err);
   }
 }
@@ -52,43 +76,29 @@ export async function getDevice(req, res, next) {
 
 export async function updateDevice(req, res, next) {
   try {
-    const { name, identifier, trackingEnabled, imei, routeId } = req.body;
+    const { name, identifier, trackingEnabled, routeId } = req.body;
+    const imei = parseImei(req.body.imei);
+    if (imei.error) return res.status(400).json({ message: imei.error });
+
     const set = {};
     const unset = {};
-
     if (name !== undefined) set.name = name;
     if (identifier !== undefined) set.identifier = identifier;
     if (trackingEnabled !== undefined) set.trackingEnabled = trackingEnabled;
     if (routeId !== undefined) set.routeId = routeId;
-
-    // UPGRADE: an empty IMEI removes the field (so the unique index never sees
-    // duplicate empties), and a filled one is trimmed and sanity-checked.
-    if (imei !== undefined) {
-      const clean = typeof imei === 'string' ? imei.trim() : imei;
-      if (!clean) {
-        unset.imei = 1;
-      } else if (!/^\d{14,16}$/.test(String(clean))) {
-        return res.status(400).json({ message: 'IMEI must be 14-16 digits' });
-      } else {
-        set.imei = String(clean);
-      }
-    }
+    if (imei.value === null) unset.imei = 1;
+    else if (imei.value !== undefined) set.imei = imei.value;
 
     const ops = {};
     if (Object.keys(set).length) ops.$set = set;
     if (Object.keys(unset).length) ops.$unset = unset;
 
-    // UPGRADE: the filter is by _id only. These routes are admin-only, and an
-    // admin who did not create a bus could not edit it before.
-    const device = await Device.findOneAndUpdate({ _id: req.params.id }, ops, { new: true })
-      .select('+deviceKey'); // admin-only route, so the admin card keeps showing its key
-
+    // Admin-only route: filter by _id only, and keep returning the key to the admin card
+    const device = await Device.findOneAndUpdate({ _id: req.params.id }, ops, { new: true }).select('+deviceKey');
     if (!device) return res.status(404).json({ message: 'Device not found' });
     res.json({ device });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ message: 'Another bus already uses this IMEI' });
-    }
+    if (err.code === 11000) return res.status(409).json({ message: 'That IMEI is already assigned to another bus' });
     next(err);
   }
 }
@@ -148,6 +158,20 @@ export async function getNearbyDevices(req, res, next) {
       .slice(0, Number(limit));
 
     res.json({ devices: withDistance });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getDeviceByImei(req, res, next) {
+  try {
+    const imei = String(req.params.imei || '').trim();
+    if (!/^\d{15,16}$/.test(imei)) return res.status(400).json({ message: 'Invalid IMEI' });
+    // Also accept the old 16-digit form ("0" + IMEI) that test devices were saved with
+    const candidates = imei.length === 15 ? [imei, `0${imei}`] : [imei];
+    const device = await Device.findOne({ imei: { $in: candidates } }).select('deviceKey name imei');
+    if (!device) return res.status(404).json({ message: 'No device registered with this IMEI' });
+    res.json({ device });
   } catch (err) {
     next(err);
   }

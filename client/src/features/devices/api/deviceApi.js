@@ -5,8 +5,8 @@ export function listDevices() {
   return apiClient.get('/devices').then((res) => res.data.devices);
 }
 
-export function createDevice({ name, identifier, type }) {
-  return apiClient.post('/devices', { name, identifier, type }).then((res) => res.data.device);
+export function createDevice({ name, identifier, type, imei }) {
+  return apiClient.post('/devices', { name, identifier, type, imei }).then((res) => res.data.device);
 }
 
 export function updateDevice(id, updates) {

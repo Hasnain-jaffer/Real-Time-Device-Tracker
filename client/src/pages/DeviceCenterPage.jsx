@@ -91,7 +91,7 @@ export default function DeviceCenterPage() {
 
   async function handleSubmit(payload) {
     if (editingDevice) {
-      await editDevice(editingDevice._id, { name: payload.name, identifier: payload.identifier });
+      await editDevice(editingDevice._id, { name: payload.name, identifier: payload.identifier, imei: payload.imei });
       showToast('Device updated', 'success');
     } else {
       await addDevice(payload);

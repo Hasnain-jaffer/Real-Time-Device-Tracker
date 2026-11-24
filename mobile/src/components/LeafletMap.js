@@ -11,11 +11,11 @@ const HTML = `<!DOCTYPE html>
 <style>
 html,body,#map{height:100%;width:100%;margin:0;padding:0}
 body{background:#d9d3c4}
-.bus-pin{width:34px;height:34px;border-radius:50%;background:#5E8C61;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;position:relative}
-.bus-pin svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bus-pin{width:34px;height:34px;border-radius:50%;background:#E9A93B;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;position:relative}
+.bus-pin svg{width:18px;height:18px;stroke:#173B32;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .bus-pin.selected{width:42px;height:42px;background:#173B32}
-.bus-pin.selected svg{width:22px;height:22px}
-.bus-pin.selected::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:2px solid #5E8C61;animation:pulse 1.6s ease-out infinite}
+.bus-pin.selected svg{width:22px;height:22px;stroke:#E9A93B}
+.bus-pin.selected::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:2px solid #E9A93B;animation:pulse 1.6s ease-out infinite}
 @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 .leaflet-tooltip{font-size:12px;font-weight:600}
 .leaflet-container{background:#d9d3c4}

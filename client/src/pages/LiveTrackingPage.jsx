@@ -107,17 +107,16 @@ const TILES = {
 };
 
 /* ─── Bus Icon (Leaflet) ─── */
-function getBusIcon(color = '#5E8C61') {
+function getBusIcon(selected = false) {
+  const bg = selected ? '#173B32' : '#E9A93B';
+  const fg = selected ? '#E9A93B' : '#173B32';
+  const size = selected ? 42 : 34;
+
   return L.divIcon({
     className: 'custom-bus-marker',
-    html: `
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-        <rect x="3" y="6" width="18" height="12" rx="2" />
-        <path d="M6 18v2" /><path d="M18 18v2" /><path d="M6 10h12" />
-      </svg>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><svg width="${Math.round(size * 0.5)}" height="${Math.round(size * 0.5)}" viewBox="0 0 24 24" fill="none" stroke="${fg}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 18v2"/><path d="M18 18v2"/><path d="M6 10h12"/></svg></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
@@ -276,7 +275,8 @@ export default function LiveTrackingPage() {
                 <Marker
                   key={device.key}
                   position={[device.latitude, device.longitude]}
-                  icon={getBusIcon(isDark ? '#79B37C' : '#5E8C61')}
+                  icon={getBusIcon(device.key === selected?.key)}
+zIndexOffset={device.key === selected?.key ? 1000 : 0}
                 />
               );
             })}

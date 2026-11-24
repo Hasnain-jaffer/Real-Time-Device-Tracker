@@ -42,7 +42,10 @@
         {
           "locationWhenInUsePermission": "My Campus Ride uses your location to show how far each bus is from you."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-status-bar"
     ],
     "updates": {
       "url": "https://u.expo.dev/d175eac5-90b0-4e8d-811c-d2602f5996d9"
